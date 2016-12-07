@@ -1,7 +1,7 @@
 // gtest
 #include <gtest/gtest.h> // googletest header file
 
-// collib
+// collision library
 #include <collision_library.h>
 using namespace collision;
 

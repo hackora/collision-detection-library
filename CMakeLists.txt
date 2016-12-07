@@ -34,7 +34,7 @@ set(HDRS include/collision_library.h)
 
 set(SRCS include/collision_library.cpp)
 
-add_library( ${CMAKE_PROJECT_NAME} ${HDRS} ${SRCS} )
+add_library( ${CMAKE_PROJECT_NAME} SHARED ${HDRS} ${SRCS} )
 
 
 option( UNITTESTS "Enable building of unittests" OFF )
