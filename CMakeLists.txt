@@ -32,7 +32,7 @@ include_directories(${COLLISION_INTERFACE_INCLUDE_DIR})
 
 set(HDRS include/collision_library.h)
 
-set(SRCS include/collision_library.cpp)
+set(SRCS sources/collision_library.cpp)
 
 add_library( ${CMAKE_PROJECT_NAME} SHARED ${HDRS} ${SRCS} )
 
