@@ -44,14 +44,14 @@
        }
 
 
-       GMlib::Vector<float,3> computeTrajectory( seconds_type dt) const override { //m
+       GMlib::Vector<double,3> computeTrajectory( seconds_type dt) const override { //m
 
            auto const tay = 0.5 * this->externalForces() * dt.count()* dt.count(); //taylor
            return this->velocity * dt.count() + tay  ;
        }
 
 
-       GMlib::Vector<float, 3> externalForces () const override ; // [m / s^2]
+       GMlib::Vector<double, 3> externalForces () const override ; // [m / s^2]
    };
 
    template <class PSurf_T, typename... Arguments>

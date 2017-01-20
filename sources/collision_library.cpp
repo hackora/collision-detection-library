@@ -15,9 +15,9 @@ namespace collision
         auto max_dt = dt;
         auto min_dt = max(S0.curr_t_in_dt, S1.curr_t_in_dt );
         auto new_dt = max_dt -min_dt;
-        auto p0 = S0.getMatrixToScene() *S0.getPos();
+        auto p0 = S0.getMatrixToScene() *S0.getPos().toType<double>();
         auto r0 = S0.getRadius();
-        auto p1 = S1.getMatrixToScene() *S1.getPos();
+        auto p1 = S1.getMatrixToScene() *S1.getPos().toType<double>();
         auto r1 = S1.getRadius();
         auto r = r0 + r1;
         auto Q = p1 - p0;
@@ -108,8 +108,8 @@ namespace collision
         auto p0 = S.getMatrixToScene() *S.getPos();
         auto r = S.getRadius();
         auto unconst_B = const_cast <StaticPhysObject<GMlib::PBezierSurf<float>>&>(B);
-        GMlib::Vector<float, 3> ds = S.computeTrajectory(new_dt);
-        GMlib::SqMatrix<float,3> A;
+        GMlib::Vector<double, 3> ds = S.computeTrajectory(new_dt);
+        GMlib::SqMatrix<double,3> A;
 
         //iteration
 
@@ -174,13 +174,13 @@ namespace collision
 
         const auto S0_old_vel = S0.velocity;
         const auto S1_old_vel = S1.velocity;
-        const auto S0_pos = S0.getPos();
-        const auto S1_pos = S1.getPos();
+        const auto S0_pos = S0.getPos().toType<double>();
+        const auto S1_pos = S1.getPos().toType<double>();
         const auto S0_mass = S0.mass;
         const auto S1_mass = S1.mass;
-        const auto distance_vector_d = GMlib::Vector<float,3>(S1_pos - S0_pos);
+        const auto distance_vector_d = GMlib::Vector<double,3>(S1_pos - S0_pos);
         const auto normal_d = distance_vector_d.getNormalized();
-        const auto n = (GMlib::Vector<float,3>(distance_vector_d).getLinIndVec()).getNormalized();
+        const auto n = (GMlib::Vector<double,3>(distance_vector_d).getLinIndVec()).getNormalized();
         const auto v0_d = (S0_old_vel * normal_d);
         const auto v1_d = (S1_old_vel * normal_d);
         const auto v0_n = (S0_old_vel * n);
@@ -215,11 +215,12 @@ namespace collision
     std::unique_ptr<Controller> unittestCollisionControllerFactory(){ return std::make_unique<MyController> (); }
     //void DynamicPhysObject<GMlib::PSphere<float> >::simulateToTInDt(seconds_type t){ }
 
-    GMlib::Vector<float,3> DynamicPhysObject<GMlib::PSphere<float> >::externalForces() const {
+    GMlib::Vector<double,3> DynamicPhysObject<GMlib::PSphere<float> >::externalForces() const {
         assert (environment != nullptr);
-        return this->environment->externalForces();
+        return this->environment->externalForces().toType<double>();
 
     }
+
 
     void MyController::localSimulate(double dt) { }
 } // END namespace collision
