@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.4)
 
 # Nice name for the IDEs
-project(collision_library_stub VERSION 0.1 LANGUAGES CXX)
+project(my_collision_library VERSION 0.1 LANGUAGES CXX)
 
 # Specify compiler features
 set(CMAKE_CXX_STANDARD 14)
@@ -35,7 +35,12 @@ set(HDRS include/collision_library.h)
 set(SRCS sources/collision_library.cpp)
 
 add_library( ${CMAKE_PROJECT_NAME} SHARED ${HDRS} ${SRCS} )
-
+target_link_libraries(
+  ${CMAKE_PROJECT_NAME}
+  ${GMlib_LIBRARIES}
+  ${GLEW_LIBRARIES}
+  ${OPENGL_LIBRARIES}
+  ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES} pthread)
 
 option( UNITTESTS "Enable building of unittests" OFF )
 if(UNITTESTS)
