@@ -263,16 +263,6 @@ namespace collision
 
     }
 
-  /* template <class Container_T >
-    void sortAndMakeUnique( Container_T & container) {
-
-        std::sort(container.begin(),container.end(), [] (const auto & a , const auto & b) {
-            return a.t_in_dt <b.t_in_dt;
-        });
-
-        //make unique
-    }*/
-
 
     void MyController::localSimulate(double dt) { }
 } // END namespace collision
