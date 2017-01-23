@@ -147,6 +147,48 @@ namespace collision
     }
 
 
+    CollisionState
+    detectCollision (const DynamicPSphere&  S,
+                     const StaticPCylinder& C,
+                     seconds_type dt)
+{
+
+    auto max_dt = dt;
+    auto min_dt = S.curr_t_in_dt;
+    auto new_dt = max_dt -min_dt;
+    auto p = S.getMatrixToScene() * S.getPos();
+    auto r_s = S.getRadius();
+    auto r_c = S.getRadius();
+    auto unconst_C = const_cast <StaticPhysObject<GMlib::PCylinder<float>>&>(C);
+    const auto M = unconst_C.evaluateParent(0.5f,0.5f,1,1);
+    auto q = M(0)(0);
+    auto u = M(1)(0);
+    auto v = M(0)(1);
+    auto n = GMlib::Vector<float,3>(u ^ v).getNormalized();
+    auto d = (q + (r_s + r_c) * n) - p;
+
+    auto ds = S.computeTrajectory(new_dt);
+    auto epsilon = 1e-6;
+
+    if ((std::abs(d * n))< epsilon)
+            {
+                return(CollisionState(seconds_type (0.0),CollisionStateFlag::SingularityParallelAndTouching));
+            }
+
+    else if ((std::abs(ds * n))< epsilon)
+    {
+        return(CollisionState(seconds_type (0.0),CollisionStateFlag::SingularityParallel));
+    }
+
+    else
+    {
+        auto x = (d * n) / (ds * n);
+        return (CollisionState (x*new_dt +min_dt,CollisionStateFlag::Collision));
+    }
+
+}
+
+
 
     void
     computeImpactResponse (DynamicPhysObject<GMlib::PSphere<float>>& S0,
