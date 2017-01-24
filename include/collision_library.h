@@ -69,11 +69,28 @@
 
    template <class Container_T > void sortAndMakeUnique( Container_T& container) {
 
-       std::sort(container.begin(),container.end(), [] (const auto & a , const auto & b) {
-       return a.t_in_dt <b.t_in_dt;
-   });
+       /*std::sort(container.begin(),container.end(), [] (const auto & a , const auto & b) {
+       return a->second.t_in_dt <b->second.t_in_dt;
+
+   });*/
 
    //make unique;
+       for (auto it1 = container.begin() ; it1 != container.end() ; ++it1){
+           for (auto it2 = std::next(it1,1) ; it2 != container.end() ;){
+               if (it2->second.obj1 == it1->second.obj1 || it2->second.obj2 == it1->second.obj1 ||
+                       it2->second.obj1 == it1->second.obj2 || it2->second.obj2 == it1->second.obj2)
+                     {
+                       container.erase(it2++);
+                     }
+               else
+                     {
+                       ++it2;
+                     }
+           }
+       }
+
+
+
    }
 
    //std::unique_ptr<Controller> unittestCollisionControllerFactory(){ return std::make_unique<MyController> (); }
