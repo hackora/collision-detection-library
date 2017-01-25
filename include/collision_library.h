@@ -40,7 +40,21 @@
        using DynamicPhysObject_Base<GMlib::PSphere<float>>::DynamicPhysObject_Base;
 
        void    simulateToTInDt( seconds_type t ) override {
+
+           auto dt = t - this->curr_t_in_dt;
+           auto Mi = this->getMatrixToSceneInverse();
+           //move
+
+           auto ds = this->computeTrajectory(dt);
+           this->translateParent(Mi*ds);
            this->curr_t_in_dt =t;
+           //update physics
+           auto F = this->externalForces();
+           auto m = this->mass;
+           auto a = 0.5*F*m*dt.count()*dt.count();
+           this->velocity += a;
+
+
        }
 
 

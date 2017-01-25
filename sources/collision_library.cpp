@@ -266,29 +266,12 @@ namespace collision
 
     void MyController::localSimulate(double dt) {
         //alg here
-           std::multimap<seconds_type,collision::CollisionObject> collisions;
 
-           //loop for collision between dynamic objects (only spheres for now)
-           for (auto it1 : _dynamic_spheres){
-               for (auto it2 : _dynamic_spheres ){
-                   auto col = collision::detectCollision(*it1,*it2,seconds_type(dt));
-                           std::cout<<"Sphere-Sphere"<<col.time.count()<<'\n';
-                   collisions.emplace(col.time,CollisionObject(it1, it2,col.time));
-               }
-
-           }
-           //loop for collision with static objects (only planes for now)
-           for (auto &it1 : _dynamic_spheres){
-               for (auto &it2 : _static_planes){
-                   auto col = collision::detectCollision(*it1,*it2,seconds_type(dt));
-                            std::cout<<"Sphere-Plane"<<col.time.count()<<'\n';
-                   collisions.emplace(col.time,CollisionObject(it1, it2,col.time));
-               }
-
-           }
-
-           sortAndMakeUnique(collisions);
+        for(auto& sphere : _dynamic_spheres){
+            sphere->simulateToTInDt(seconds_type(dt));
+        }
 
     }
+
 } // END namespace collision
 
