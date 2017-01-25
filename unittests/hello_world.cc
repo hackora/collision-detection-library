@@ -14,6 +14,7 @@ using namespace GMlib;
 #include <chrono>
 #include <iostream>
 #include <map>
+#include <typeinfo>
 using namespace std::chrono_literals;
 
 
@@ -80,6 +81,13 @@ TEST(SortAndMakeUnique, MakeUnique) {
   auto cylinder1 = unittestStaticPhysObjectFactory<PCylinder<float>>();
   auto cylinder2 = unittestStaticPhysObjectFactory<PCylinder<float>>();
 
+  std::cout << "types of sphere:";
+         std::cout << " [" << typeid(sphere1.get()).name() << ']';
+      std::cout << '\n';
+  std::cout << "types of cylinder:";
+         std::cout << " [" << typeid(cylinder1.get()).name() << ']';
+      std::cout << '\n';
+
   std::multimap<seconds_type,CollisionObject> collisions;
 
   collisions.emplace(seconds_type{0.4ms},CollisionObject(sphere2.get(), cylinder1.get(), 0.4ms));
@@ -99,28 +107,21 @@ TEST(SortAndMakeUnique, MakeUnique) {
 
   //sortAndMakeUnique(collisions);
 
-  int i=0;
-  for (auto& it: collisions){
-      if (i==0){
-          c0 = it.second;
-          i++;
-      }
-      else if (i ==1){
-          c1 = it.second;
-          i++;
-      }
-      else if (i ==2){
-          c2 = it.second;
-          i++;
-      }
-      else
-          c3 = it.second;
-  }
-
   std::cout << "mymultimap contains:";
       for (auto& it: collisions)
         std::cout << " [" << it.first.count() << ']';
       std::cout << '\n';
+
+     if(dynamic_cast<DynamicPSphere*> (c0.obj1))
+         std::cout << " [" << typeid(c0.obj1).name() << '\n';
+
+
+      std::cout << "types of sphere:";
+             std::cout << " [" << typeid(c0.obj1).name() << ']';
+          std::cout << '\n';
+      std::cout << "types of cylinder:";
+             std::cout << " [" << typeid(c0.obj2).name() << ']';
+          std::cout << '\n';
 
   sortAndMakeUnique(collisions);
 
@@ -129,8 +130,25 @@ TEST(SortAndMakeUnique, MakeUnique) {
         std::cout << " [" << it.first.count() << ']';
       std::cout << '\n';
 
+      int i=0;
+      for (auto& it: collisions){
+          if (i==0){
+              c0 = it.second;
+              i++;
+          }
+          else if (i ==1){
+              c1 = it.second;
+              i++;
+          }
+          else {
+              c2 = it.second;
+              i++;
+          }
 
-  /*EXPECT_EQ(c0.obj1, sphere1.get()); EXPECT_EQ( c0.t_in_dt, seconds_type{0.1ms} );
+      }
+
+
+  EXPECT_EQ(c0.obj1, sphere1.get()); EXPECT_EQ( c0.t_in_dt, seconds_type{0.1ms} );
   EXPECT_EQ(c1.obj1, sphere3.get()); EXPECT_EQ( c1.t_in_dt, seconds_type{0.2ms} );
-  EXPECT_EQ(c2.obj1, sphere2.get()); EXPECT_EQ( c2.t_in_dt, seconds_type{0.3ms} );*/
+  EXPECT_EQ(c2.obj1, sphere2.get()); EXPECT_EQ( c2.t_in_dt, seconds_type{0.4ms} );
 }

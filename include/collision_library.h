@@ -78,7 +78,8 @@
        for (auto it1 = container.begin() ; it1 != container.end() ; ++it1){
            for (auto it2 = std::next(it1,1) ; it2 != container.end() ;){
                if (it2->second.obj1 == it1->second.obj1 || it2->second.obj2 == it1->second.obj1 ||
-                       it2->second.obj1 == it1->second.obj2 || it2->second.obj2 == it1->second.obj2)
+                       it2->second.obj1 == it1->second.obj2 ||
+                       (it2->second.obj2 == it1->second.obj2 && dynamic_cast<DynamicPSphere*> (it1->second.obj2))) //I suppose that obj1 in collisionObject is always dynamic
                      {
                        container.erase(it2++);
                      }
