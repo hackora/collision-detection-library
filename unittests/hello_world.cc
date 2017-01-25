@@ -335,3 +335,64 @@ TEST(SortAndMakeUnique, ComplexExample) {
   EXPECT_EQ(c0.obj1, sphere1.get()); EXPECT_EQ(c0.obj2, sphere3.get()); EXPECT_EQ( c0.t_in_dt, seconds_type{0.1ms} );
   EXPECT_EQ(c1.obj1, sphere2.get()); EXPECT_EQ(c1.obj2, cylinder.get()); EXPECT_EQ( c1.t_in_dt, seconds_type{0.3ms} );
 }
+
+
+TEST(DSphereDSphereCollisionDetection, SimulationController) {
+
+    Environment env;
+
+    std::vector<std::unique_ptr<DynamicPSphere>> spheres;
+    spheres.reserve(2);
+
+    spheres.emplace_back(unittestDynamicPhysObjectFactory<GMlib::PSphere<float>>());
+    spheres.back()->environment = &env;
+    spheres.back()->velocity = Vector<double, 3>{10.0, 10.1, 0.0};
+    spheres.back()->curr_t_in_dt = seconds_type{0};
+
+    spheres.emplace_back(unittestDynamicPhysObjectFactory<GMlib::PSphere<float>>());
+    spheres.back()->environment = &env;
+    spheres.back()->velocity = Vector<double, 3>{-2.0, 1.1, 0.0};
+    spheres.back()->curr_t_in_dt = seconds_type{0};
+
+
+    std::vector<std::unique_ptr<StaticPPlane>> planes;
+    planes.reserve (4);
+    planes.emplace_back (unittestStaticPhysObjectFactory<GMlib::PPlane<float>> (
+        GMlib::Point<float, 3> (-10.0f, -10.0f, 5.0f),
+        GMlib::Vector<float, 3> (20.0f, 0.0f, 0.0f),
+        GMlib::Vector<float, 3> (0.0f, 0.0f, -5.0f)));
+
+
+    planes.emplace_back (unittestStaticPhysObjectFactory<GMlib::PPlane<float>> (
+        GMlib::Point<float, 3> (10.0f, -10.0f, 5.0f),
+        GMlib::Vector<float, 3> (0.0f, 20.0f, 0.0f),
+        GMlib::Vector<float, 3> (0.0f, 0.0f, -5.0f)));
+
+    planes.emplace_back (unittestStaticPhysObjectFactory<GMlib::PPlane<float>> (
+        GMlib::Point<float, 3> (10.0f, 10.0f, 5.0f),
+        GMlib::Vector<float, 3> (-20.0f, 0.0f, 0.0f),
+        GMlib::Vector<float, 3> (0.0f, 0.0f, -5.0f)));
+
+    planes.emplace_back (unittestStaticPhysObjectFactory<GMlib::PPlane<float>> (
+        GMlib::Point<float, 3> (-10.0f, 10.0f, 5.0f),
+        GMlib::Vector<float, 3> (0.0f, -20.0f, 0.0f),
+        GMlib::Vector<float, 3> (0.0f, 0.0f, -5.0f)));
+
+    auto controller = unittestCollisionControllerFactory();
+    for(auto& sphere : spheres)
+      controller->add(sphere.get());
+    for(auto& plane : planes)
+      controller->add(plane.get());
+
+
+    Scene scene;
+    scene.insert(controller.get());
+    scene.prepare();
+
+    scene.enabledFixedDt();
+    scene.setFixedDt(1.0);
+    scene.start();
+    scene.simulate();
+    scene.prepare();
+
+}
