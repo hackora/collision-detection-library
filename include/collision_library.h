@@ -11,12 +11,13 @@
 
    class MyController : public Controller {
        GM_SCENEOBJECT (MyController)
+
    public:
 
        explicit MyController () = default;
 
-       void add (DynamicPSphere* const sphere) { _dynamic_spheres.push_back(sphere); }
-       void add (StaticPSphere* const sphere) { _static_spheres.push_back(sphere); }
+       void add (DynamicPSphere* const sphere);
+       void add (StaticPSphere* const sphere) { _static_spheres.push_back(sphere);  }
        void add (StaticPPlane* const plane) { _static_planes.push_back(plane); }
        void add (StaticPCylinder* const cylinder) { _static_cylinders.push_back(cylinder); }
        void add (StaticPBezierSurf* const surf) { _static_bezier_surf.push_back(surf); }
@@ -24,13 +25,14 @@
    protected:
        void localSimulate (double dt) override;
 
-       std::vector<DynamicPSphere*>    _dynamic_spheres;
-       std::vector<StaticPSphere*>     _static_spheres;
-       std::vector<StaticPPlane*>      _static_planes;
-       std::vector<StaticPCylinder*>   _static_cylinders;
-       std::vector<StaticPBezierSurf*> _static_bezier_surf;
+       std::vector<DynamicPSphere*>             _dynamic_spheres;
+       std::vector<StaticPSphere*>              _static_spheres;
+       std::vector<StaticPPlane*>               _static_planes;
+       std::vector<StaticPCylinder*>            _static_cylinders;
+       std::vector<StaticPBezierSurf*>          _static_bezier_surf;
 
-       std::vector<collision::CollisionObject> _collisions;
+       std::vector<collision::CollisionObject>  _collisions;
+       DefaultEnvironment                      _environment;
 
    };
 
@@ -39,23 +41,7 @@
    public:
        using DynamicPhysObject_Base<GMlib::PSphere<float>>::DynamicPhysObject_Base;
 
-       void    simulateToTInDt( seconds_type t ) override {
-
-           auto dt = t - this->curr_t_in_dt;
-           auto Mi = this->getMatrixToSceneInverse();
-           //move
-
-           auto ds = this->computeTrajectory(dt);
-           this->translateParent(Mi*ds);
-           this->curr_t_in_dt =t;
-           //update physics
-           auto F = this->externalForces();
-           auto m = this->mass;
-           auto a = 0.5*F*m*dt.count()*dt.count();
-           this->velocity += a;
-
-
-       }
+       void    simulateToTInDt( seconds_type t ) override;
 
 
        GMlib::Vector<double,3> computeTrajectory( seconds_type dt) const override { //m
