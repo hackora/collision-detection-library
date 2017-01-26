@@ -291,6 +291,11 @@ namespace collision
 
 
     }
+    void MyController::add (DynamicPSphere* const sphere) {
+        _dynamic_spheres.push_back(sphere);
+        sphere->environment = &_environment;
+    }
+
 
 
 } // END namespace collision
