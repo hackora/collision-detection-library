@@ -31,7 +31,7 @@
        std::vector<StaticPCylinder*>            _static_cylinders;
        std::vector<StaticPBezierSurf*>          _static_bezier_surf;
 
-       std::vector<collision::CollisionObject>  _collisions;
+       std::multimap<seconds_type,collision::CollisionObject> _collisions;
        DefaultEnvironment                      _environment;
 
    };
