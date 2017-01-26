@@ -384,7 +384,6 @@ TEST(DSphereDSphereCollisionDetection, SimulationController) {
     for(auto& plane : planes)
       controller->add(plane.get());
 
-
     Scene scene;
     scene.insert(controller.get());
     scene.prepare();

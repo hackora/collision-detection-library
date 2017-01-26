@@ -265,9 +265,12 @@ namespace collision
 
 
     void MyController::localSimulate(double dt) {
+
         //alg here
+        //we need to reset currentTInDt before or after this
 
         for(auto& sphere : _dynamic_spheres){
+            sphere->curr_t_in_dt =seconds_type(0.0);
             sphere->simulateToTInDt(seconds_type(dt));
         }
 
@@ -280,18 +283,13 @@ namespace collision
 
         auto ds = this->computeTrajectory(dt);
         this->translateParent(Mi*ds);
-        //this->curr_t_in_dt =t;
+        this->curr_t_in_dt =t;
         //update physics
         auto F = this->externalForces();
-        auto m = this->mass;
-        auto a = 0.5*F*m*dt.count()*dt.count();
+        auto a = F*dt.count();
         this->velocity += a;
 
 
-    }
-    void MyController::add (DynamicPSphere* const sphere) {
-        _dynamic_spheres.push_back(sphere);
-        sphere->environment = &_environment;
     }
 
 
