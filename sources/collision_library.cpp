@@ -254,7 +254,7 @@ namespace collision
     }
 
 
-    std::unique_ptr<Controller> unittestCollisionControllerFactory(){ return std::make_unique<MyController> (); }
+    std::unique_ptr<Controller> unittestCollisionControllerFactory(){ return std::make_unique<collision_controller> (); }
     //void DynamicPhysObject<GMlib::PSphere<float> >::simulateToTInDt(seconds_type t){ }
 
     GMlib::Vector<double,3> DynamicPhysObject<GMlib::PSphere<float> >::externalForces() const {
@@ -264,7 +264,7 @@ namespace collision
     }
 
 
-    void MyController::localSimulate(double dt) {
+    void collision_controller::localSimulate(double dt) {
 
         //alg here
         //we need to reset currentTInDt before or after this
@@ -351,7 +351,7 @@ namespace collision
 
 
     }
-    void MyController::add (DynamicPSphere* const sphere) {
+    void collision_controller::add (DynamicPSphere* const sphere) {
         _dynamic_spheres.push_back(sphere);
         sphere->environment = &_environment;
     }

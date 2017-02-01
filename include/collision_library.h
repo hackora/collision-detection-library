@@ -9,12 +9,12 @@
    namespace collision
    {
 
-   class MyController : public Controller {
-       GM_SCENEOBJECT (MyController)
+   class collision_controller : public Controller {
+       GM_SCENEOBJECT (collision_controller)
 
    public:
 
-       explicit MyController () = default;
+       explicit collision_controller () = default;
 
        void add (DynamicPSphere* const sphere);
        void add (StaticPSphere* const sphere) { _static_spheres.push_back(sphere);  }
