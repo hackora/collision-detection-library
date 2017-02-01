@@ -46,8 +46,11 @@
 
        GMlib::Vector<double,3> computeTrajectory( seconds_type dt) const override { //m
 
-           auto const tay = 0.5 * this->externalForces() * this->mass * dt.count()* dt.count(); //taylor
-           return this->velocity * dt.count() + tay  ;
+           auto t = dt.count();
+           auto F = this->externalForces();
+           auto m = this->mass;
+           auto const tay = 0.5 * m * F * std::pow(t,2); //taylor
+           return this->velocity * t + tay  ;
        }
 
 

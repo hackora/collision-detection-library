@@ -273,7 +273,7 @@ namespace collision
             sphere->curr_t_in_dt =seconds_type(0.0);
         }
 
-       /* for(auto& sphere : _dynamic_spheres){
+        /*for(auto& sphere : _dynamic_spheres){
             sphere->simulateToTInDt(seconds_type(dt));
         }*/
 
@@ -303,20 +303,51 @@ namespace collision
             }
         }
         sortAndMakeUnique(_collisions);
+        auto it = _collisions.begin();
+
+        while (!_collisions.empty()){
+
+            auto col = _collisions.begin();
+            auto col_time =  col->first;
+            auto col_obj1 = col->second.obj1;
+            auto col_obj2 = col->second.obj2;
+            _collisions.erase(it++);
+
+            if (dynamic_cast<DynamicPSphere*> (col_obj2)){
+                auto sphere1 = dynamic_cast<DynamicPSphere*> (col_obj1);
+                auto sphere2 = dynamic_cast<DynamicPSphere*> (col_obj2);
+                sphere1->simulateToTInDt(col_time);
+                sphere2->simulateToTInDt(col_time);
+                computeImpactResponse(*sphere1,*sphere2,col_time);
+            }
+
+            else {
+                auto sphere = dynamic_cast<DynamicPSphere*> (col_obj1);
+                auto plane = dynamic_cast<StaticPPlane*> (col_obj2);
+                sphere->simulateToTInDt(col_time);
+                computeImpactResponse(*sphere,*plane,col_time);
+            }
+
+        }
+        for(auto& sphere : _dynamic_spheres){
+            sphere->simulateToTInDt(seconds_type(dt));
+        }
 
     }
     void DynamicPhysObject<GMlib::PSphere<float> >::simulateToTInDt( seconds_type t ) {
 
-        auto dt = t - this->curr_t_in_dt;
+        auto t0 = seconds_type(t - this->curr_t_in_dt);
         auto Mi = this->getMatrixToSceneInverse();
         //move
 
-        auto ds = this->computeTrajectory(dt);
+        auto ds = this->computeTrajectory(t0);
         this->translateParent(Mi*ds);
         this->curr_t_in_dt =t;
         //update physics
         auto F = this->externalForces();
-        auto a = F*dt.count();
+        auto m = this->mass;
+        auto c = t0.count();
+        auto a = 0.5*m*F*c*c;
         this->velocity += a;
 
 
