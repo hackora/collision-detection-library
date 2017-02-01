@@ -313,9 +313,8 @@ namespace collision
             auto col_obj2 = col->second.obj2;
             _collisions.erase(it++);
 
-            if (dynamic_cast<DynamicPSphere*> (col_obj2)){
+            if (auto sphere2 = dynamic_cast<DynamicPSphere*> (col_obj2)){
                 auto sphere1 = dynamic_cast<DynamicPSphere*> (col_obj1);
-                auto sphere2 = dynamic_cast<DynamicPSphere*> (col_obj2);
                 sphere1->simulateToTInDt(col_time);
                 sphere2->simulateToTInDt(col_time);
                 computeImpactResponse(*sphere1,*sphere2,col_time);
