@@ -303,7 +303,6 @@ namespace collision
             }
         }
         sortAndMakeUnique(_collisions);
-        auto it = _collisions.begin();
 
         while (!_collisions.empty()){
 
@@ -311,7 +310,7 @@ namespace collision
             auto col_time =  col->first;
             auto col_obj1 = col->second.obj1;
             auto col_obj2 = col->second.obj2;
-            _collisions.erase(it++);
+            _collisions.erase(col); //col is now invalid but it won't be used until next iteration when we redefine it
             if (auto sphere2 = dynamic_cast<DynamicPSphere*> (col_obj2)){
                 auto sphere1 = dynamic_cast<DynamicPSphere*> (col_obj1);
                 sphere1->simulateToTInDt(col_time);
