@@ -312,7 +312,6 @@ namespace collision
             auto col_obj1 = col->second.obj1;
             auto col_obj2 = col->second.obj2;
             _collisions.erase(it++);
-
             if (auto sphere2 = dynamic_cast<DynamicPSphere*> (col_obj2)){
                 auto sphere1 = dynamic_cast<DynamicPSphere*> (col_obj1);
                 sphere1->simulateToTInDt(col_time);
@@ -326,6 +325,32 @@ namespace collision
                 sphere->simulateToTInDt(col_time);
                 computeImpactResponse(*sphere,*plane,col_time);
             }
+
+            //Detect more collisions
+
+            for (auto it1 = _dynamic_spheres.begin() ; it1 != _dynamic_spheres.end() ; ++it1){
+                for (auto it2 = it1+1 ; it2 != _dynamic_spheres.end() ; ++it2 ){
+                    auto col = collision::detectCollision(**it1,**it2,seconds_type(dt));
+                    const auto &sphere1= *it1;
+                    const auto &sphere2= *it2;
+                    auto min_ctidt = std::max(sphere1->curr_t_in_dt, sphere2->curr_t_in_dt);
+                    if (col.flag == CollisionStateFlag::Collision && col.time < seconds_type(dt) && col.time > min_ctidt){
+                        _collisions.emplace(col.time,CollisionObject(sphere1,sphere2,col.time));
+
+                }
+            }
+            }
+
+            //loop for collision with static objects (only planes for now)
+            for (auto &it1 : _dynamic_spheres){
+                for (auto &it2 : _static_planes){
+                    auto col = collision::detectCollision(*it1,*it2,seconds_type(dt));
+                    if (col.flag == CollisionStateFlag::Collision && col.time < seconds_type(dt) && col.time > it1->curr_t_in_dt){
+                        _collisions.emplace(col.time,CollisionObject(it1,it2,col.time));
+                    }
+                }
+            }
+            sortAndMakeUnique(_collisions);
 
         }
         for(auto& sphere : _dynamic_spheres){
@@ -346,7 +371,7 @@ namespace collision
         auto F = this->externalForces();
         auto m = this->mass;
         auto c = t0.count();
-        auto a = 0.5*m*F*c*c;
+        auto a = F*c;
         this->velocity += a;
 
 
