@@ -24,6 +24,7 @@
 
    protected:
        void localSimulate (double dt) override;
+       void detectCollisions(double dt);
 
        std::vector<DynamicPSphere*>             _dynamic_spheres;
        std::vector<StaticPSphere*>              _static_spheres;

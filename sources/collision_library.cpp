@@ -266,42 +266,14 @@ namespace collision
 
     void collision_controller::localSimulate(double dt) {
 
-        //alg here
-        //we need to reset currentTInDt before or after this
+        //we need to reset currentTInDt of all dynamic objects
 
         for(auto& sphere : _dynamic_spheres){
             sphere->curr_t_in_dt =seconds_type(0.0);
         }
 
-        /*for(auto& sphere : _dynamic_spheres){
-            sphere->simulateToTInDt(seconds_type(dt));
-        }*/
-
-        //Collision Detection
-
-        //loop for collision between dynamic objects (only spheres for now)
-        for (auto it1 = _dynamic_spheres.begin() ; it1 != _dynamic_spheres.end() ; ++it1){
-            for (auto it2 = it1+1 ; it2 != _dynamic_spheres.end() ; ++it2 ){
-                auto col = collision::detectCollision(**it1,**it2,seconds_type(dt));
-                const auto &sphere1= *it1;
-                const auto &sphere2= *it2;
-                auto min_ctidt = std::max(sphere1->curr_t_in_dt, sphere2->curr_t_in_dt);
-                if (col.flag == CollisionStateFlag::Collision && col.time < seconds_type(dt) && col.time > min_ctidt){
-                    _collisions.emplace(col.time,CollisionObject(sphere1,sphere2,col.time));
-
-            }
-        }
-        }
-
-        //loop for collision with static objects (only planes for now)
-        for (auto &it1 : _dynamic_spheres){
-            for (auto &it2 : _static_planes){
-                auto col = collision::detectCollision(*it1,*it2,seconds_type(dt));
-                if (col.flag == CollisionStateFlag::Collision && col.time < seconds_type(dt) && col.time > it1->curr_t_in_dt){
-                    _collisions.emplace(col.time,CollisionObject(it1,it2,col.time));
-                }
-            }
-        }
+        //Detect collisions
+        detectCollisions(dt);
         sortAndMakeUnique(_collisions);
 
         while (!_collisions.empty()){
@@ -326,29 +298,7 @@ namespace collision
             }
 
             //Detect more collisions
-
-            for (auto it1 = _dynamic_spheres.begin() ; it1 != _dynamic_spheres.end() ; ++it1){
-                for (auto it2 = it1+1 ; it2 != _dynamic_spheres.end() ; ++it2 ){
-                    auto col = collision::detectCollision(**it1,**it2,seconds_type(dt));
-                    const auto &sphere1= *it1;
-                    const auto &sphere2= *it2;
-                    auto min_ctidt = std::max(sphere1->curr_t_in_dt, sphere2->curr_t_in_dt);
-                    if (col.flag == CollisionStateFlag::Collision && col.time < seconds_type(dt) && col.time > min_ctidt){
-                        _collisions.emplace(col.time,CollisionObject(sphere1,sphere2,col.time));
-
-                }
-            }
-            }
-
-            //loop for collision with static objects (only planes for now)
-            for (auto &it1 : _dynamic_spheres){
-                for (auto &it2 : _static_planes){
-                    auto col = collision::detectCollision(*it1,*it2,seconds_type(dt));
-                    if (col.flag == CollisionStateFlag::Collision && col.time < seconds_type(dt) && col.time > it1->curr_t_in_dt){
-                        _collisions.emplace(col.time,CollisionObject(it1,it2,col.time));
-                    }
-                }
-            }
+            detectCollisions(dt);
             sortAndMakeUnique(_collisions);
 
         }
@@ -378,6 +328,33 @@ namespace collision
     void collision_controller::add (DynamicPSphere* const sphere) {
         _dynamic_spheres.push_back(sphere);
         sphere->environment = &_environment;
+    }
+
+    void collision_controller::detectCollisions(double dt){
+
+        //loop for collision between dynamic objects (only spheres for now)
+        for (auto it1 = _dynamic_spheres.begin() ; it1 != _dynamic_spheres.end() ; ++it1){
+            for (auto it2 = it1+1 ; it2 != _dynamic_spheres.end() ; ++it2 ){
+                auto col = collision::detectCollision(**it1,**it2,seconds_type(dt));
+                const auto &sphere1= *it1;
+                const auto &sphere2= *it2;
+                auto min_ctidt = std::max(sphere1->curr_t_in_dt, sphere2->curr_t_in_dt);
+                if (col.flag == CollisionStateFlag::Collision && col.time < seconds_type(dt) && col.time > min_ctidt){
+                    _collisions.emplace(col.time,CollisionObject(sphere1,sphere2,col.time));
+
+                }
+            }
+        }
+
+        //loop for collision with static objects (only dynamic spheres with static planes for now)
+        for (auto &it1 : _dynamic_spheres){
+            for (auto &it2 : _static_planes){
+                auto col = collision::detectCollision(*it1,*it2,seconds_type(dt));
+                if (col.flag == CollisionStateFlag::Collision && col.time < seconds_type(dt) && col.time > it1->curr_t_in_dt){
+                    _collisions.emplace(col.time,CollisionObject(it1,it2,col.time));
+                }
+            }
+        }
     }
 
 
