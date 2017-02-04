@@ -328,6 +328,7 @@ namespace collision
     void collision_controller::add (DynamicPSphere* const sphere) {
         _dynamic_spheres.push_back(sphere);
         sphere->environment = &_environment;
+        std::cout<< "Added the sphere";
     }
 
     void collision_controller::detectCollisions(double dt){

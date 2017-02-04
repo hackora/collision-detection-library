@@ -395,3 +395,317 @@ TEST(DSphereDSphereCollisionDetection, SimulationController) {
     scene.prepare();
 
 }
+
+TEST(ControllerBasicTests, Simulatesphere_OneStep) {
+
+    double dt = 0.1;
+    Point<double,3> gold_pos{ 0.0, 0.21, 0.0 };
+
+    Environment env;
+
+    auto sphere = unittestDynamicPhysObjectFactory<GMlib::PSphere<float>>();
+    sphere->velocity = Vector<double, 3>{0.0, 2.1, 0.0};
+    sphere->curr_t_in_dt = seconds_type{0};
+
+    auto controller = unittestCollisionControllerFactory();
+    controller->add(sphere.get());
+    sphere->environment = &env;
+
+    Scene scene;
+    scene.insert(controller.get());
+    scene.prepare();
+
+    scene.enabledFixedDt();
+    scene.setFixedDt(dt);
+    scene.start();
+    scene.simulate();
+    scene.prepare();
+
+
+    auto sphere_pos = sphere->getGlobalPos();
+    std::cout<< sphere->velocity ;
+
+    auto abs_tol = 1e-5;
+    EXPECT_NEAR( sphere_pos(0), gold_pos(0), abs_tol );
+    EXPECT_NEAR( sphere_pos(1), gold_pos(1), abs_tol );
+    EXPECT_NEAR( sphere_pos(2), gold_pos(2), abs_tol );
+
+    controller->remove(sphere.get());
+    scene.remove(controller.get());
+}
+
+TEST(ControllerBasicTests, Simulatesphere_1000_Steps) {
+
+    size_t iterations = 1000;
+    double dt = 0.1;
+    const Point<double, 3> gold_pos{0.0, 210.0, 0.0};
+
+    Environment env;
+
+    auto sphere = unittestDynamicPhysObjectFactory<GMlib::PSphere<float>>();
+    sphere->environment = &env;
+    sphere->velocity = Vector<double, 3>{0.0, 2.1, 0.0};
+    sphere->curr_t_in_dt = seconds_type{0};
+
+    auto controller = unittestCollisionControllerFactory();
+    controller->add(sphere.get());
+    sphere->environment = &env;
+
+    Scene scene;
+    scene.insert(controller.get());
+    scene.prepare();
+
+    scene.enabledFixedDt ();
+    scene.setFixedDt (dt);
+    scene.start();
+    for (size_t i = 0; i < iterations; ++i) {
+        scene.simulate ();
+        scene.prepare ();
+    }
+
+    const auto sphere_pos  = sphere->getGlobalPos ();
+
+    auto abs_tol = iterations * 1e-5;
+    EXPECT_NEAR( sphere_pos(0), gold_pos(0), abs_tol );
+    EXPECT_NEAR( sphere_pos(1), gold_pos(1), abs_tol );
+    EXPECT_NEAR( sphere_pos(2), gold_pos(2), abs_tol );
+
+    controller->remove (sphere.get());
+    scene.remove (controller.get());
+}
+
+TEST(ControllerBasicTests, Simulatesphere_StillInsideWalls_1hsim_SingleSphere) {
+
+    // 1h of simulations based on
+    // 0.016s per frame = ~60fps
+    size_t iterations = 1 * 3600 * 60;
+    double dt = 0.016;
+
+    Environment env;
+
+    auto sphere = unittestDynamicPhysObjectFactory<GMlib::PSphere<float>>();
+    sphere->velocity = Vector<double, 3>{10.0, 10.1, 0.0};
+    sphere->curr_t_in_dt = seconds_type{0};
+
+
+    // Create some walls
+    std::vector<std::unique_ptr<StaticPPlane>> planes;
+    planes.reserve (4);
+    planes.emplace_back (unittestStaticPhysObjectFactory<GMlib::PPlane<float>> (
+        GMlib::Point<float, 3> (-10.0f, -10.0f, 5.0f),
+        GMlib::Vector<float, 3> (20.0f, 0.0f, 0.0f),
+        GMlib::Vector<float, 3> (0.0f, 0.0f, -5.0f)));
+
+
+    planes.emplace_back (unittestStaticPhysObjectFactory<GMlib::PPlane<float>> (
+        GMlib::Point<float, 3> (10.0f, -10.0f, 5.0f),
+        GMlib::Vector<float, 3> (0.0f, 20.0f, 0.0f),
+        GMlib::Vector<float, 3> (0.0f, 0.0f, -5.0f)));
+
+    planes.emplace_back (unittestStaticPhysObjectFactory<GMlib::PPlane<float>> (
+        GMlib::Point<float, 3> (10.0f, 10.0f, 5.0f),
+        GMlib::Vector<float, 3> (-20.0f, 0.0f, 0.0f),
+        GMlib::Vector<float, 3> (0.0f, 0.0f, -5.0f)));
+
+    planes.emplace_back (unittestStaticPhysObjectFactory<GMlib::PPlane<float>> (
+        GMlib::Point<float, 3> (-10.0f, 10.0f, 5.0f),
+        GMlib::Vector<float, 3> (0.0f, -20.0f, 0.0f),
+        GMlib::Vector<float, 3> (0.0f, 0.0f, -5.0f)));
+
+    auto controller = unittestCollisionControllerFactory();
+    controller->add(sphere.get());
+    sphere->environment = &env;
+    for(auto& plane : planes)
+      controller->add(plane.get());
+
+    Scene scene;
+    scene.insert(controller.get());
+    scene.prepare();
+
+    scene.enabledFixedDt ();
+    scene.setFixedDt (dt);
+    scene.start();
+    for (size_t i = 0; i < iterations; ++i) {
+        scene.simulate ();
+        scene.prepare ();
+    }
+
+    const auto sphere_pos  = sphere->getGlobalPos ();
+    const auto sphere_rad  = sphere->getRadius();
+
+    EXPECT_GE(   sphere_pos(0), -10.0f + sphere_rad ); EXPECT_LE( sphere_pos(0), 10.0f - sphere_rad );
+    EXPECT_GE(   sphere_pos(1), -10.0f + sphere_rad ); EXPECT_LE( sphere_pos(1), 10.0f - sphere_rad );
+    EXPECT_FLOAT_EQ( sphere_pos(2), 0.0f );
+
+    for(auto& plane : planes)
+      controller->remove(plane.get());
+    controller->remove (sphere.get());
+    scene.remove (controller.get());
+}
+
+TEST(ControllerBasicTests, Simulatesphere_StillInsideWalls_1hsim_TwoSpheres) {
+
+    // 1h of simulations based on
+    // 0.016s per frame = ~60fps
+    size_t iterations = 1 * 3600 * 60;
+    double dt = 0.016;
+
+    Environment env;
+
+    std::vector<std::unique_ptr<DynamicPSphere>> spheres;
+    spheres.reserve(2);
+
+    spheres.emplace_back(unittestDynamicPhysObjectFactory<GMlib::PSphere<float>>());
+    spheres.back()->velocity = Vector<double, 3>{10.0, 10.1, 0.0};
+    spheres.back()->curr_t_in_dt = seconds_type{0};
+
+    spheres.emplace_back(unittestDynamicPhysObjectFactory<GMlib::PSphere<float>>());
+    spheres.back()->velocity = Vector<double, 3>{-2.0, 1.1, 0.0};
+    spheres.back()->curr_t_in_dt = seconds_type{0};
+
+    // Create some walls
+    std::vector<std::unique_ptr<StaticPPlane>> planes;
+    planes.reserve (4);
+    planes.emplace_back (unittestStaticPhysObjectFactory<GMlib::PPlane<float>> (
+        GMlib::Point<float, 3> (-10.0f, -10.0f, 5.0f),
+        GMlib::Vector<float, 3> (20.0f, 0.0f, 0.0f),
+        GMlib::Vector<float, 3> (0.0f, 0.0f, -5.0f)));
+
+
+    planes.emplace_back (unittestStaticPhysObjectFactory<GMlib::PPlane<float>> (
+        GMlib::Point<float, 3> (10.0f, -10.0f, 5.0f),
+        GMlib::Vector<float, 3> (0.0f, 20.0f, 0.0f),
+        GMlib::Vector<float, 3> (0.0f, 0.0f, -5.0f)));
+
+    planes.emplace_back (unittestStaticPhysObjectFactory<GMlib::PPlane<float>> (
+        GMlib::Point<float, 3> (10.0f, 10.0f, 5.0f),
+        GMlib::Vector<float, 3> (-20.0f, 0.0f, 0.0f),
+        GMlib::Vector<float, 3> (0.0f, 0.0f, -5.0f)));
+
+    planes.emplace_back (unittestStaticPhysObjectFactory<GMlib::PPlane<float>> (
+        GMlib::Point<float, 3> (-10.0f, 10.0f, 5.0f),
+        GMlib::Vector<float, 3> (0.0f, -20.0f, 0.0f),
+        GMlib::Vector<float, 3> (0.0f, 0.0f, -5.0f)));
+
+    auto controller = unittestCollisionControllerFactory();
+    for(auto& sphere : spheres){
+      controller->add(sphere.get());
+      sphere->environment = &env;
+    }
+    for(auto& plane : planes)
+      controller->add(plane.get());
+
+    Scene scene;
+    scene.insert(controller.get());
+    scene.prepare();
+
+    scene.enabledFixedDt ();
+    scene.setFixedDt (dt);
+    scene.start();
+    for (size_t i = 0; i < iterations; ++i) {
+        scene.simulate ();
+        scene.prepare ();
+    }
+
+    for(const auto& sphere : spheres ) {
+      const auto sphere_pos  = sphere->getGlobalPos ();
+      const auto sphere_rad  = sphere->getRadius();
+      EXPECT_GE(   sphere_pos(0), -10.0f + sphere_rad ); EXPECT_LE( sphere_pos(0), 10.0f - sphere_rad );
+      EXPECT_GE(   sphere_pos(1), -10.0f + sphere_rad ); EXPECT_LE( sphere_pos(1), 10.0f - sphere_rad );
+      EXPECT_FLOAT_EQ( sphere_pos(2), 0.0f );
+    }
+
+
+    for(auto& plane : planes)
+      controller->remove(plane.get());
+    for(auto& sphere : spheres)
+      controller->remove(sphere.get());
+    scene.remove (controller.get());
+}
+
+TEST(ControllerBasicTests, Simulatesphere_StillInsideWalls_1hsim_ThreeSpheres) {
+
+    // 1h of simulations based on
+    // 0.016s per frame = ~60fps
+    size_t iterations = 1 * 3600 * 60;
+    double dt = 0.016;
+
+    Environment env;
+
+    std::vector<std::unique_ptr<DynamicPSphere>> spheres;
+    spheres.reserve(3);
+
+    spheres.emplace_back(unittestDynamicPhysObjectFactory<GMlib::PSphere<float>>());
+    spheres.back()->velocity = Vector<double, 3>{10.0, 10.1, 0.0};
+    spheres.back()->curr_t_in_dt = seconds_type{0};
+
+    spheres.emplace_back(unittestDynamicPhysObjectFactory<GMlib::PSphere<float>>());
+    spheres.back()->translateGlobal( Vector<float,3>(3.0f,0.0f,0.0f) );
+    spheres.back()->velocity = Vector<double, 3>{-2.0, 1.1, 0.0};
+    spheres.back()->curr_t_in_dt = seconds_type{0};
+
+    spheres.emplace_back(unittestDynamicPhysObjectFactory<GMlib::PSphere<float>>());
+    spheres.back()->translateGlobal( Vector<float,3>(-3.0f,0.0f,0.0f) );
+    spheres.back()->velocity = Vector<double, 3>{2.0, -11.1, 0.0};
+    spheres.back()->curr_t_in_dt = seconds_type{0};
+
+    // Create some walls
+    std::vector<std::unique_ptr<StaticPPlane>> planes;
+    planes.reserve (4);
+    planes.emplace_back (unittestStaticPhysObjectFactory<GMlib::PPlane<float>> (
+        GMlib::Point<float, 3> (-10.0f, -10.0f, 5.0f),
+        GMlib::Vector<float, 3> (20.0f, 0.0f, 0.0f),
+        GMlib::Vector<float, 3> (0.0f, 0.0f, -5.0f)));
+
+
+    planes.emplace_back (unittestStaticPhysObjectFactory<GMlib::PPlane<float>> (
+        GMlib::Point<float, 3> (10.0f, -10.0f, 5.0f),
+        GMlib::Vector<float, 3> (0.0f, 20.0f, 0.0f),
+        GMlib::Vector<float, 3> (0.0f, 0.0f, -5.0f)));
+
+    planes.emplace_back (unittestStaticPhysObjectFactory<GMlib::PPlane<float>> (
+        GMlib::Point<float, 3> (10.0f, 10.0f, 5.0f),
+        GMlib::Vector<float, 3> (-20.0f, 0.0f, 0.0f),
+        GMlib::Vector<float, 3> (0.0f, 0.0f, -5.0f)));
+
+    planes.emplace_back (unittestStaticPhysObjectFactory<GMlib::PPlane<float>> (
+        GMlib::Point<float, 3> (-10.0f, 10.0f, 5.0f),
+        GMlib::Vector<float, 3> (0.0f, -20.0f, 0.0f),
+        GMlib::Vector<float, 3> (0.0f, 0.0f, -5.0f)));
+
+    auto controller = unittestCollisionControllerFactory();
+    for(auto& sphere : spheres){
+      controller->add(sphere.get());
+      sphere->environment = &env;
+    }
+    for(auto& plane : planes)
+      controller->add(plane.get());
+
+    Scene scene;
+    scene.insert(controller.get());
+    scene.prepare();
+
+    scene.enabledFixedDt ();
+    scene.setFixedDt (dt);
+    scene.start();
+    for (size_t i = 0; i < iterations; ++i) {
+        scene.simulate ();
+        scene.prepare ();
+    }
+
+    for(const auto& sphere : spheres ) {
+      const auto sphere_pos  = sphere->getGlobalPos ();
+      const auto sphere_rad  = sphere->getRadius();
+      EXPECT_GE(   sphere_pos(0), -10.0f + sphere_rad ); EXPECT_LE( sphere_pos(0), 10.0f - sphere_rad );
+      EXPECT_GE(   sphere_pos(1), -10.0f + sphere_rad ); EXPECT_LE( sphere_pos(1), 10.0f - sphere_rad );
+      EXPECT_FLOAT_EQ( sphere_pos(2), 0.0f );
+    }
+
+
+    for(auto& plane : planes)
+      controller->remove(plane.get());
+    for(auto& sphere : spheres)
+      controller->remove(sphere.get());
+    scene.remove (controller.get());
+}
+

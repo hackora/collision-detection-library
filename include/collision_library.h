@@ -98,7 +98,6 @@
 
    }
 
-   //std::unique_ptr<Controller> unittestCollisionControllerFactory(){ return std::make_unique<MyController> (); }
    }
    // END namespace collision
 #endif //COLLISION_LIBRARY_H
