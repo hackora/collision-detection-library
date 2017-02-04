@@ -249,7 +249,7 @@ namespace collision
         auto n = GMlib::Vector<float,3>(u ^ v).getNormalized();
         auto vel = S.velocity * n;
 
-        auto new_velocity = S.velocity - ((2* vel)*n);
+        auto new_velocity = S.velocity - ((2* vel)*n)*0.95;
         S.velocity = new_velocity ;
     }
 
@@ -328,7 +328,6 @@ namespace collision
     void collision_controller::add (DynamicPSphere* const sphere) {
         _dynamic_spheres.push_back(sphere);
         sphere->environment = &_environment;
-        std::cout<< "Added the sphere";
     }
 
     void collision_controller::detectCollisions(double dt){

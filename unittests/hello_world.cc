@@ -423,7 +423,6 @@ TEST(ControllerBasicTests, Simulatesphere_OneStep) {
 
 
     auto sphere_pos = sphere->getGlobalPos();
-    std::cout<< sphere->velocity ;
 
     auto abs_tol = 1e-5;
     EXPECT_NEAR( sphere_pos(0), gold_pos(0), abs_tol );
