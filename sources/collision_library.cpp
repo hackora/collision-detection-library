@@ -1,6 +1,7 @@
 #include "collision_library.h"
 #include <iostream>
 #include <cmath>
+#include <string>
 
 namespace collision
 {
@@ -272,6 +273,9 @@ namespace collision
             sphere->curr_t_in_dt =seconds_type(0.0);
         }
 
+        //Detect state changes
+        detectStateChanges(dt);
+
         //Detect collisions
         detectCollisions(dt);
         sortAndMakeUnique(_collisions);
@@ -354,6 +358,94 @@ namespace collision
                     _collisions.emplace(col.time,CollisionObject(it1,it2,col.time));
                 }
             }
+        }
+    }
+
+   states stateNow (const DynamicPhysObject<GMlib::PSphere<float>>& S,
+           const StaticPhysObject<GMlib::PPlane<float>>&   P,
+           seconds_type dt){
+
+        if (S.velocity == 0.0)
+            return states::Still;
+        auto max_dt = dt;
+        auto min_dt = S.curr_t_in_dt;
+        auto new_dt = max_dt -min_dt;
+        auto p = S.getMatrixToScene() * S.getPos();
+        auto r = S.getRadius();
+
+        auto unconst_P = const_cast <StaticPhysObject<GMlib::PPlane<float>>&>(P);
+        const auto M = unconst_P.evaluateParent(0.5f,0.5f,1,1);
+        auto q = M(0)(0);
+        auto u = M(1)(0);
+        auto v = M(0)(1);
+        auto n = GMlib::Vector<float,3>(u ^ v).getNormalized();
+        auto d = (q + r * n) - p;
+
+        auto ds = S.computeTrajectory(new_dt);
+        auto epsilon = 1e-6;
+
+        if ((std::abs(d * n))< epsilon)
+            return states::Rolling;
+
+        return states::Free;
+    }
+
+    states collision_controller::detectStateChanges(double dt){
+        auto P = _static_planes.begin(); //attached plane
+        const auto M = (*P)->evaluateParent(0.5f,0.5f,1,1);
+        auto u = M(1)(0);
+        auto v = M(0)(1);
+        auto q = M(0)(0);
+        auto n = GMlib::Vector<float,3>(u ^ v).getNormalized();
+        auto epsilon = 1e-5;
+
+        //loop for state changes of dynamic objects (only spheres for now)
+        for (auto it = _dynamic_spheres.begin() ; it != _dynamic_spheres.end() ; ++it){
+
+            auto S = **it;
+            auto dts = seconds_type(dt);
+
+            auto max_dt = dts;
+            auto min_dt = S.curr_t_in_dt;
+            auto new_dt = max_dt -min_dt;
+            auto ds = S.computeTrajectory(new_dt);
+
+            if (stateNow(S, **P, dts) == states::Rolling){
+                if (ds * n > 0)
+                    return states::Free;
+                else if (ds * n < 0 && std::abs(ds * n) < epsilon )
+                    return states::Still;
+                else
+                    return states::Rolling;
+            }
+
+            else if (stateNow(S, **P,dts) == states::Still){
+                if (ds * n <= 0 && std::abs(ds * n) > epsilon){
+                    //Correct trajectory
+                    return states::Rolling;
+                }
+                else if (ds * n > 0 && std::abs(ds * n) > epsilon )
+                    return states::Free;
+                else
+                    return states::Still;
+            }
+
+            else{
+                auto r = S.getRadius();
+                auto p = S.getMatrixToScene() * S.getPos();
+                auto d = (q + r * n) - p;
+                if (ds * n <= 0 && std::abs((d * n) -r) < epsilon){
+                    //Correct trajectory
+                    return states::Rolling;
+                }
+                else if (ds * n < 0 &&  std::abs((d * n) -r) < epsilon && std::abs(ds * n) < epsilon )
+                    return states::Still;
+                else
+                    return states::Free;
+
+
+            }
+
         }
     }
 

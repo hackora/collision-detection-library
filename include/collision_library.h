@@ -8,6 +8,11 @@
 
    namespace collision
    {
+   enum class states {
+       Free,
+       Rolling,
+       Still
+   };
 
    class collision_controller : public Controller {
        GM_SCENEOBJECT (collision_controller)
@@ -25,6 +30,7 @@
    protected:
        void localSimulate (double dt) override;
        void detectCollisions(double dt);
+       states detectStateChanges(double dt);
 
        std::vector<DynamicPSphere*>             _dynamic_spheres;
        std::vector<StaticPSphere*>              _static_spheres;
