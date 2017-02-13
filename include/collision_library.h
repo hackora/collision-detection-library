@@ -8,11 +8,6 @@
 
    namespace collision
    {
-   enum class states {
-       Free,
-       Rolling,
-       Still
-   };
 
    class collision_controller : public Controller {
        GM_SCENEOBJECT (collision_controller)
@@ -30,7 +25,7 @@
    protected:
        void localSimulate (double dt) override;
        void detectCollisions(double dt);
-       states detectStateChanges(double dt);
+       void detectStateChanges(double dt);
        void correctTrajectory(const DynamicPhysObject<GMlib::PSphere<float>>& S, seconds_type dt);
 
        std::vector<DynamicPSphere*>             _dynamic_spheres;
@@ -49,6 +44,25 @@
    public:
        using DynamicPhysObject_Base<GMlib::PSphere<float>>::DynamicPhysObject_Base;
 
+       enum class states {
+           Free,
+           Rolling,
+           Still,
+           noChange
+       };
+
+       struct stateChangeObject{
+            DynamicPSphere* obj;
+           states stateChanges;
+           //maybe time (usually now)
+
+           stateChangeObject( DynamicPSphere* o, states s  )
+               : obj{o}, stateChanges{s} {}
+       };
+
+       StaticPPlane*                                                        attachedPlane;
+       states                                                                     state= states::Free;
+
        void    simulateToTInDt( seconds_type t ) override;
 
 
@@ -56,13 +70,30 @@
 
            auto t = dt.count();
            auto F = this->externalForces();
-           auto m = this->mass;
-           auto const tay = 0.5 * m * F * std::pow(t,2); //taylor
+           auto const tay = 0.5  * F * std::pow(t,2); //taylor
            return this->velocity * t + tay  ;
        }
 
 
        GMlib::Vector<double, 3> externalForces () const override ; // [m / s^2]
+
+       void setState(states state){
+           this->state = state;
+       }
+
+       states getState(){
+           return this->state;
+       }
+
+       void setAttachedPlane(StaticPPlane* plane){
+           this->attachedPlane = plane;
+       }
+
+       StaticPPlane *getAttachedPlane(){
+           return this->attachedPlane;
+       }
+
+
    };
 
    template <class PSurf_T, typename... Arguments>
