@@ -31,6 +31,7 @@
        void localSimulate (double dt) override;
        void detectCollisions(double dt);
        states detectStateChanges(double dt);
+       void correctTrajectory(const DynamicPhysObject<GMlib::PSphere<float>>& S, seconds_type dt);
 
        std::vector<DynamicPSphere*>             _dynamic_spheres;
        std::vector<StaticPSphere*>              _static_spheres;

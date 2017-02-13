@@ -1,7 +1,6 @@
 #include "collision_library.h"
 #include <iostream>
 #include <cmath>
-#include <string>
 
 namespace collision
 {
@@ -273,8 +272,8 @@ namespace collision
             sphere->curr_t_in_dt =seconds_type(0.0);
         }
 
-        //Detect state changes
-        detectStateChanges(dt);
+//        //Detect state changes
+//        detectStateChanges(dt);
 
         //Detect collisions
         detectCollisions(dt);
@@ -449,6 +448,15 @@ namespace collision
         }
     }
 
+    void  collision_controller::correctTrajectory(const DynamicPhysObject<GMlib::PSphere<float>>& S, seconds_type  dt){
+
+        auto p0 = S.getMatrixToScene() *S.getPos().toType<double>();
+        auto r0 = S.getRadius();
+
+
+
+
+    }
 
 
 } // END namespace collision
