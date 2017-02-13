@@ -8,12 +8,11 @@
 
    namespace collision
    {
-
    enum class states {
+       NoChange,
        Free,
        Rolling,
-       Still,
-       NoChange
+       Still
    };
 
    struct stateChangeObject{
@@ -24,6 +23,8 @@
        stateChangeObject( DynamicPSphere* o, states s  )
            : obj{o}, stateChanges{s} {}
    };
+
+    stateChangeObject detectStateChanges(DynamicPhysObject<GMlib::PSphere<float>> *  sphere, double dt);
 
    class collision_controller : public Controller {
        GM_SCENEOBJECT (collision_controller)
@@ -41,7 +42,7 @@
    protected:
        void localSimulate (double dt) override;
        void detectCollisions(double dt);
-       stateChangeObject detectStateChanges(DynamicPhysObject<GMlib::PSphere<float>> *  sphere, double dt);
+      // stateChangeObject detectStateChanges(DynamicPhysObject<GMlib::PSphere<float>> *  sphere, double dt);
        //void correctTrajectory(const DynamicPhysObject<GMlib::PSphere<float>>& S, seconds_type dt);
 
        std::vector<DynamicPSphere*>             _dynamic_spheres;

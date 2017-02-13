@@ -272,8 +272,13 @@ namespace collision
             sphere->curr_t_in_dt =seconds_type(0.0);
         }
 
-//        //Detect state changes
-//        detectStateChanges(dt);
+        for(auto& sphere : _dynamic_spheres){
+            auto stateObj= collision::detectStateChanges(sphere,dt);
+            std::cout<<sphere->velocity;
+
+            //std::cout<<int(stateObj.stateChanges)<<'\n';
+
+        }
 
         //Detect collisions
         detectCollisions(dt);
@@ -359,7 +364,7 @@ namespace collision
         }
     }
 
-    stateChangeObject collision_controller::detectStateChanges(DynamicPhysObject<GMlib::PSphere<float>> *  sphere, double dt){
+    stateChangeObject detectStateChanges(DynamicPhysObject<GMlib::PSphere<float>> *  sphere, double dt){
         auto P =  sphere->getAttachedPlane();
         auto M = P->evaluateParent(0.5f,0.5f,1,1);
         auto u = M(1)(0);
