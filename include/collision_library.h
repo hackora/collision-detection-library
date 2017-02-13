@@ -9,6 +9,22 @@
    namespace collision
    {
 
+   enum class states {
+       Free,
+       Rolling,
+       Still,
+       NoChange
+   };
+
+   struct stateChangeObject{
+        DynamicPSphere* obj;
+       states stateChanges;
+       //maybe time (usually now)
+
+       stateChangeObject( DynamicPSphere* o, states s  )
+           : obj{o}, stateChanges{s} {}
+   };
+
    class collision_controller : public Controller {
        GM_SCENEOBJECT (collision_controller)
 
@@ -25,8 +41,8 @@
    protected:
        void localSimulate (double dt) override;
        void detectCollisions(double dt);
-       void detectStateChanges(double dt);
-       void correctTrajectory(const DynamicPhysObject<GMlib::PSphere<float>>& S, seconds_type dt);
+       stateChangeObject detectStateChanges(DynamicPhysObject<GMlib::PSphere<float>> *  sphere, double dt);
+       //void correctTrajectory(const DynamicPhysObject<GMlib::PSphere<float>>& S, seconds_type dt);
 
        std::vector<DynamicPSphere*>             _dynamic_spheres;
        std::vector<StaticPSphere*>              _static_spheres;
@@ -43,22 +59,6 @@
    class DynamicPhysObject<GMlib::PSphere<float>> : public DynamicPhysObject_Base<GMlib::PSphere<float>> {
    public:
        using DynamicPhysObject_Base<GMlib::PSphere<float>>::DynamicPhysObject_Base;
-
-       enum class states {
-           Free,
-           Rolling,
-           Still,
-           noChange
-       };
-
-       struct stateChangeObject{
-            DynamicPSphere* obj;
-           states stateChanges;
-           //maybe time (usually now)
-
-           stateChangeObject( DynamicPSphere* o, states s  )
-               : obj{o}, stateChanges{s} {}
-       };
 
        StaticPPlane*                                                        attachedPlane;
        states                                                                     state= states::Free;
