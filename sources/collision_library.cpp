@@ -329,6 +329,7 @@ namespace collision
     }
     void collision_controller::add (DynamicPSphere* const sphere) {
         _dynamic_spheres.push_back(sphere);
+        _attachedObjects[sphere];
         sphere->environment = &_environment;
     }
 
@@ -422,7 +423,10 @@ namespace collision
     void collision_controller::setAttachedObjects(DynamicPSphere *sphere, StaticPPlane *plane){
 
         _attachedObjects[sphere].push_back(plane);
+
     }
+
+
 
 
    // void correctTrajectory(const DynamicPhysObject<GMlib::PSphere<float>>& S, seconds_type dt);

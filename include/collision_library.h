@@ -131,5 +131,6 @@
    }
 
    }
+
    // END namespace collision
 #endif //COLLISION_LIBRARY_H
