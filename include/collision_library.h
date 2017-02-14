@@ -3,6 +3,7 @@
 
 // collision library interface
 #include <collision_interface.h>
+#include <unordered_map>
 
 
 
@@ -38,21 +39,23 @@
        void add (StaticPPlane* const plane) { _static_planes.push_back(plane); }
        void add (StaticPCylinder* const cylinder) { _static_cylinders.push_back(cylinder); }
        void add (StaticPBezierSurf* const surf) { _static_bezier_surf.push_back(surf); }
+       void setAttachedObjects(DynamicPSphere* sphere , StaticPPlane* plane);
+       std::vector<StaticPPlane*>  getAttachedObjects (DynamicPSphere* sphere) ;
+
 
    protected:
        void localSimulate (double dt) override;
        void detectCollisions(double dt);
-      // stateChangeObject detectStateChanges(DynamicPhysObject<GMlib::PSphere<float>> *  sphere, double dt);
-       //void correctTrajectory(const DynamicPhysObject<GMlib::PSphere<float>>& S, seconds_type dt);
 
-       std::vector<DynamicPSphere*>             _dynamic_spheres;
-       std::vector<StaticPSphere*>              _static_spheres;
-       std::vector<StaticPPlane*>               _static_planes;
-       std::vector<StaticPCylinder*>            _static_cylinders;
-       std::vector<StaticPBezierSurf*>          _static_bezier_surf;
+       std::vector<DynamicPSphere*>                                                                                             _dynamic_spheres;
+       std::vector<StaticPSphere*>                                                                                                   _static_spheres;
+       std::vector<StaticPPlane*>                                                                                                      _static_planes;
+       std::vector<StaticPCylinder*>                                                                                                 _static_cylinders;
+       std::vector<StaticPBezierSurf*>                                                                                             _static_bezier_surf;
 
-       std::multimap<seconds_type,collision::CollisionObject> _collisions;
-       DefaultEnvironment                      _environment;
+       std::multimap<seconds_type,collision::CollisionObject>                                                _collisions;
+       std::unordered_map<DynamicPSphere* , std::vector<StaticPPlane*>>                    _attachedObjects;
+       DefaultEnvironment                                                                                                                    _environment;
 
    };
 
@@ -61,7 +64,6 @@
    public:
        using DynamicPhysObject_Base<GMlib::PSphere<float>>::DynamicPhysObject_Base;
 
-       StaticPPlane*                                                        attachedPlane;
        states                                                                     state= states::Free;
 
        void    simulateToTInDt( seconds_type t ) override;
@@ -85,15 +87,6 @@
        states getState(){
            return this->state;
        }
-
-       void setAttachedPlane(StaticPPlane* plane){
-           this->attachedPlane = plane;
-       }
-
-       StaticPPlane *getAttachedPlane(){
-           return this->attachedPlane;
-       }
-
 
    };
 

@@ -272,13 +272,8 @@ namespace collision
             sphere->curr_t_in_dt =seconds_type(0.0);
         }
 
-        for(auto& sphere : _dynamic_spheres){
-            auto stateObj= collision::detectStateChanges(sphere,dt);
-            std::cout<<sphere->velocity;
 
-            //std::cout<<int(stateObj.stateChanges)<<'\n';
 
-        }
 
         //Detect collisions
         detectCollisions(dt);
@@ -348,7 +343,6 @@ namespace collision
                 auto min_ctidt = std::max(sphere1->curr_t_in_dt, sphere2->curr_t_in_dt);
                 if (col.flag == CollisionStateFlag::Collision && col.time < seconds_type(dt) && col.time > min_ctidt ){
                     _collisions.emplace(col.time,CollisionObject(sphere1,sphere2,col.time));
-
                 }
             }
         }
@@ -360,70 +354,78 @@ namespace collision
                 if (col.flag == CollisionStateFlag::Collision && col.time < seconds_type(dt) && col.time > it1->curr_t_in_dt){
                     _collisions.emplace(col.time,CollisionObject(it1,it2,col.time));
                 }
+               else if(col.flag ==CollisionStateFlag::SingularityParallelAndTouching){
+                    setAttachedObjects(it1,it2);
+                }
             }
         }
     }
 
     stateChangeObject detectStateChanges(DynamicPhysObject<GMlib::PSphere<float>> *  sphere, double dt){
-        auto P =  sphere->getAttachedPlane();
-        auto M = P->evaluateParent(0.5f,0.5f,1,1);
-        auto u = M(1)(0);
-        auto v = M(0)(1);
-        auto q = M(0)(0);
-        auto n = GMlib::Vector<float,3>(u ^ v).getNormalized();
-        auto epsilon = 1e-5;
-        auto dts = seconds_type(dt);
+//        auto P =  sphere->getAttachedPlane();
+//        auto M = P->evaluateParent(0.5f,0.5f,1,1);
+//        auto u = M(1)(0);
+//        auto v = M(0)(1);
+//        auto q = M(0)(0);
+//        auto n = GMlib::Vector<float,3>(u ^ v).getNormalized();
+//        auto epsilon = 1e-5;
+//        auto dts = seconds_type(dt);
 
-        auto max_dt = dts;
-        auto min_dt = sphere->curr_t_in_dt;
-        auto new_dt = max_dt -min_dt;
-        auto ds = sphere->computeTrajectory(new_dt);
+//        auto max_dt = dts;
+//        auto min_dt = sphere->curr_t_in_dt;
+//        auto new_dt = max_dt -min_dt;
+//        auto ds = sphere->computeTrajectory(new_dt);
 
-        if (sphere->state == states::Rolling){
-            if (ds * n > 0)
-                return (stateChangeObject(sphere, states::Free));
-            else if (ds * n < 0 && std::abs(ds * n) < epsilon )
-                return (stateChangeObject(sphere,states::Still)) ;
-            else
-                return (stateChangeObject(sphere,  states::NoChange));
-        }
+//        if (sphere->state == states::Rolling){
+//            if (ds * n > 0)
+//                return (stateChangeObject(sphere, states::Free));
+//            else if (ds * n < 0 && std::abs(ds * n) < epsilon )
+//                return (stateChangeObject(sphere,states::Still)) ;
+//            else
+//                return (stateChangeObject(sphere,  states::NoChange));
+//        }
 
-        else if (sphere->state == states::Still){
-            if (ds * n <= 0 && std::abs(ds * n) > epsilon){
-                //Correct trajectory
-                return (stateChangeObject(sphere,  states::Rolling));
-            }
-            else if (ds * n > 0 && std::abs(ds * n) > epsilon )
-                return (stateChangeObject(sphere,  states::Free));
-            else
-                return (stateChangeObject(sphere,  states::NoChange));
-        }
+//        else if (sphere->state == states::Still){
+//            if (ds * n <= 0 && std::abs(ds * n) > epsilon){
+//                //Correct trajectory
+//                return (stateChangeObject(sphere,  states::Rolling));
+//            }
+//            else if (ds * n > 0 && std::abs(ds * n) > epsilon )
+//                return (stateChangeObject(sphere,  states::Free));
+//            else
+//                return (stateChangeObject(sphere,  states::NoChange));
+//        }
 
-        else{
-            auto r = sphere->getRadius();
-            auto p = sphere->getMatrixToScene() * sphere->getPos();
-            auto d = (q + r * n) - p;
-            if (ds * n <= 0 && std::abs((d * n) -r) < epsilon){
-                //Correct trajectory
-                return (stateChangeObject(sphere,  states::Rolling));
-            }
-            else if (ds * n < 0 &&  std::abs((d * n) -r) < epsilon && std::abs(ds * n) < epsilon )
-                return (stateChangeObject(sphere,  states::Still));
-            else
-                return (stateChangeObject(sphere,  states::NoChange));
+//        else{
+//            auto r = sphere->getRadius();
+//            auto p = sphere->getMatrixToScene() * sphere->getPos();
+//            auto d = (q + r * n) - p;
+//            if (ds * n <= 0 && std::abs(((-n*r) * ds) -(ds*ds)) < epsilon){
+//                //Correct trajectory
+//                return (stateChangeObject(sphere,  states::Rolling));
+//            }
+//            else if (std::abs(d * n) < epsilon )
+//                return (stateChangeObject(sphere,  states::Still));
+//            else
+//                return (stateChangeObject(sphere,  states::NoChange));
 
-        }
+//        }
 }
 
-//    void  collision_controller::correctTrajectory(const DynamicPhysObject<GMlib::PSphere<float>>& S, seconds_type  dt){
 
-//        auto p0 = S.getMatrixToScene() *S.getPos().toType<double>();
-//        auto r0 = S.getRadius();
+    std::vector<StaticPPlane*>  collision_controller:: getAttachedObjects (DynamicPSphere* sphere) {
+
+         return (_attachedObjects[sphere]);
+
+    }
+
+    void collision_controller::setAttachedObjects(DynamicPSphere *sphere, StaticPPlane *plane){
+
+        _attachedObjects[sphere].push_back(plane);
+    }
 
 
-
-
- //   }
+   // void correctTrajectory(const DynamicPhysObject<GMlib::PSphere<float>>& S, seconds_type dt);
 
 
 } // END namespace collision
