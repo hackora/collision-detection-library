@@ -54,7 +54,7 @@
        std::vector<StaticPBezierSurf*>                                                                                             _static_bezier_surf;
 
        std::multimap<seconds_type,collision::CollisionObject>                                                _collisions;
-       std::unordered_map<DynamicPSphere* , std::vector<StaticPPlane*>>                    _attachedObjects;
+       std::unordered_map<DynamicPSphere* , std::vector<StaticPPlane*>>                    _attachedPlanes;
        DefaultEnvironment                                                                                                                    _environment;
 
    };

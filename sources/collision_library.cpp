@@ -329,7 +329,7 @@ namespace collision
     }
     void collision_controller::add (DynamicPSphere* const sphere) {
         _dynamic_spheres.push_back(sphere);
-        _attachedObjects[sphere];
+        _attachedPlanes[sphere];
         sphere->environment = &_environment;
     }
 
@@ -416,13 +416,13 @@ namespace collision
 
     std::vector<StaticPPlane*>  collision_controller:: getAttachedObjects (DynamicPSphere* sphere) {
 
-         return (_attachedObjects[sphere]);
+         return (_attachedPlanes[sphere]);
 
     }
 
     void collision_controller::setAttachedObjects(DynamicPSphere *sphere, StaticPPlane *plane){
 
-        _attachedObjects[sphere].push_back(plane);
+        _attachedPlanes[sphere].push_back(plane);
 
     }
 
