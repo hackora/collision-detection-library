@@ -362,7 +362,37 @@ namespace collision
         }
     }
 
-    stateChangeObject detectStateChanges(DynamicPhysObject<GMlib::PSphere<float>> *  sphere, double dt){
+    std::vector<StaticPPlane*> const collision_controller::getAttachedPlanes(DynamicPSphere* sphere) {
+
+        return (_attachedPlanes[sphere]);
+
+    }
+
+    void collision_controller::setAttachedObjects(DynamicPSphere *sphere, StaticPPlane *plane){
+
+        _attachedPlanes[sphere].push_back(plane);
+
+    }
+
+    void setState(DynamicPSphere* sphere, states state){
+
+        sphere->state =state;
+
+    }
+
+    states getState(DynamicPSphere* sphere){
+
+        return sphere->state;
+
+    }
+
+    stateChangeObject collision_controller::detectStateChanges( DynamicPSphere* sphere, double dt){
+        auto planes = sphere->sphereController->getAttachedPlanes(sphere);
+        for (auto &it :planes){
+            auto M = it->evaluateParent(0.5f,0.5f,1,1);
+        }
+    }
+//        auto planes = this->sphereController->getAttachedPlanes(this);
 //        auto P =  sphere->getAttachedPlane();
 //        auto M = P->evaluateParent(0.5f,0.5f,1,1);
 //        auto u = M(1)(0);
@@ -411,20 +441,7 @@ namespace collision
 //                return (stateChangeObject(sphere,  states::NoChange));
 
 //        }
-}
-
-
-    std::vector<StaticPPlane*>  collision_controller:: getAttachedObjects (DynamicPSphere* sphere) {
-
-         return (_attachedPlanes[sphere]);
-
-    }
-
-    void collision_controller::setAttachedObjects(DynamicPSphere *sphere, StaticPPlane *plane){
-
-        _attachedPlanes[sphere].push_back(plane);
-
-    }
+//}
 
 
 

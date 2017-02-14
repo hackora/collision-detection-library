@@ -25,8 +25,6 @@
            : obj{o}, stateChanges{s} {}
    };
 
-    stateChangeObject detectStateChanges(DynamicPhysObject<GMlib::PSphere<float>> *  sphere, double dt);
-
    class collision_controller : public Controller {
        GM_SCENEOBJECT (collision_controller)
 
@@ -39,13 +37,18 @@
        void add (StaticPPlane* const plane) { _static_planes.push_back(plane); }
        void add (StaticPCylinder* const cylinder) { _static_cylinders.push_back(cylinder); }
        void add (StaticPBezierSurf* const surf) { _static_bezier_surf.push_back(surf); }
-       void setAttachedObjects(DynamicPSphere* sphere , StaticPPlane* plane);
-       std::vector<StaticPPlane*>  getAttachedObjects (DynamicPSphere* sphere) ;
-
 
    protected:
        void localSimulate (double dt) override;
        void detectCollisions(double dt);
+       void setAttachedObjects(DynamicPSphere* sphere , StaticPPlane* plane);
+       std::vector<StaticPPlane*>  const getAttachedPlanes(DynamicPSphere* sphere) ;
+
+       void setState(DynamicPSphere* sphere, states state);
+
+       states getState(DynamicPSphere* sphere);
+
+       stateChangeObject detectStateChanges( DynamicPSphere* sphere,double dt);
 
        std::vector<DynamicPSphere*>                                                                                             _dynamic_spheres;
        std::vector<StaticPSphere*>                                                                                                   _static_spheres;
@@ -66,9 +69,9 @@
 
        states                                                                     state= states::Free;
 
+       collision_controller*                                         sphereController;
+
        void    simulateToTInDt( seconds_type t ) override;
-
-
        GMlib::Vector<double,3> computeTrajectory( seconds_type dt) const override { //m
 
            auto t = dt.count();
@@ -79,14 +82,6 @@
 
 
        GMlib::Vector<double, 3> externalForces () const override ; // [m / s^2]
-
-       void setState(states state){
-           this->state = state;
-       }
-
-       states getState(){
-           return this->state;
-       }
 
    };
 
