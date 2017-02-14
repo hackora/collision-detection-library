@@ -41,7 +41,7 @@
    protected:
        void localSimulate (double dt) override;
        void detectCollisions(double dt);
-       void setAttachedObjects(DynamicPSphere* sphere , StaticPPlane* plane);
+       void setAttachedObjects(DynamicPSphere*  sphere  , StaticPPlane* plane);
        std::vector<StaticPPlane*>  const getAttachedPlanes(DynamicPSphere* sphere) ;
 
        void setState(DynamicPSphere* sphere, states state);
@@ -69,7 +69,7 @@
 
        states                                                                     state= states::Free;
 
-       collision_controller*                                         sphereController;
+       //collision_controller*                                         sphereController;
 
        void    simulateToTInDt( seconds_type t ) override;
        GMlib::Vector<double,3> computeTrajectory( seconds_type dt) const override { //m
