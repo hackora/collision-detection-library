@@ -387,60 +387,70 @@ namespace collision
 
     stateChangeObject collision_controller::detectStateChanges( DynamicPSphere* sphere, double dt){
         auto planes = this->getAttachedPlanes(sphere);
+
+        auto r = sphere->getRadius();
+        auto p = sphere->getMatrixToScene() * sphere->getPos();
+        auto M =(_static_planes.back()) ->evaluateParent(0.5f,0.5f,1,1);
+        auto q = M(0)(0);
+
         if (!planes.empty()){
-            auto epsilon = 1e-5;
+            auto epsilon = 1e-4;
             auto dts = seconds_type(dt);
             auto max_dt = dts;
             auto min_dt = sphere->curr_t_in_dt;
             auto new_dt = max_dt -min_dt;
             auto ds = sphere->computeTrajectory(new_dt);
             GMlib::Vector <float,3>n {0.0f,0.0f,0.0f};
-            GMlib::APoint<float,3>q;
             for (auto &it :planes){
                 auto M = it->evaluateParent(0.5f,0.5f,1,1);
-                auto pos = M(0)(0);
                 auto u = M(1)(0);
                 auto v = M(0)(1);
                 auto normal = GMlib::Vector<float,3>(u ^ v);
                 n+=normal;
-                q=pos;
            }
            n= GMlib::Vector <float,3>(n/planes.size()).getNormalized();
 
+           auto d = (q + r * n) - p;
+           auto bla=std::abs(((-n*r) * ds) -(ds*ds));
+           auto dsn= ds * n;
+           auto dn= d*n;
+
                 if (sphere->state == states::Rolling){
                     if (ds * n > 0){
-                        return (stateChangeObject(sphere, states::Free));
                         std::cout<<"state changes from Rolling to Free";
+                        return (stateChangeObject(sphere, states::Free));
                     }
-                    else if (ds * n < 0 && std::abs(ds * n) < epsilon )
+                    else if (std::abs(((-n*r) * ds) -(ds*ds)) < epsilon){
+                         std::cout<<"state changes from Rolling to Still";
                         return (stateChangeObject(sphere,states::Still)) ;
+                    }
                     else
                         return (stateChangeObject(sphere,  states::Rolling));
                 }
 
                 else if (sphere->state == states::Still){
-                    if (ds * n <= 0 && std::abs(ds * n) > epsilon){
+                    if (std::abs(((-n*r) * ds) -(ds*ds)) < epsilon){
                         //Correct trajectory
-                        return (stateChangeObject(sphere,  states::Rolling));
                         std::cout<<"state changes from still to Rolling";
+                        return (stateChangeObject(sphere,  states::Rolling));
                     }
-                    else if (ds * n > 0 && std::abs(ds * n) > epsilon )
+                    else if (ds * n > 0  ){
+                        std::cout<<"state changes from still to Free";
                         return (stateChangeObject(sphere,  states::Free));
+                    }
                     else
                         return (stateChangeObject(sphere,  states::Still));
                 }
 
                 else{
-                    auto r = sphere->getRadius();
-                    auto p = sphere->getMatrixToScene() * sphere->getPos();
-                    auto d = (q + r * n) - p;
-                    if (ds * n <= 0 && std::abs(((-n*r) * ds) -(ds*ds)) < epsilon){
+                    if (ds * n <= 0 && std::abs(d * n) < epsilon ){
                         //Correct trajectory
+                        std::cout<<"state changes Free to Rolling";
                         return (stateChangeObject(sphere,  states::Rolling));
                     }
-                    else if (std::abs(d * n) < epsilon ){
+                    else if (std::abs(((-n*r) * ds) -(ds*ds)) < epsilon){
+                         std::cout<<"state changes Free to Still";
                         return (stateChangeObject(sphere,  states::Still));
-                        std::cout<<"state changes Free to Still";
                     }
                     else
                         return (stateChangeObject(sphere,  states::Free));
