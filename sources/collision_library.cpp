@@ -272,11 +272,30 @@ namespace collision
             sphere->curr_t_in_dt =seconds_type(0.0);
         }
 
-         for (auto& sphere : _dynamic_spheres){
-             auto stateObject = detectStateChanges(sphere,dt);
-             sphere->state= stateObject.stateChanges;
+        // singularity state change
+        for (auto &sphere : _dynamic_spheres){
+            for (auto &plane : _static_planes){
+                auto col = collision::detectCollision(*sphere,*plane,seconds_type(dt));
+                if (col.flag == CollisionStateFlag::SingularityParallelAndTouching && !( std::find(_attachedPlanes[sphere].begin(), _attachedPlanes[sphere].end(), plane) != _attachedPlanes[sphere].end() ))
+                    attachPlane(sphere,plane);
 
-         }
+//                else if(col.flag != CollisionStateFlag::SingularityParallelAndTouching  &&  ( std::find(_attachedPlanes[sphere].begin(), _attachedPlanes[sphere].end(), plane) != _attachedPlanes[sphere].end() ))
+//                    detachPlane(sphere,plane);
+            }
+        }
+
+        //detect state change now
+
+        for (auto sphere = _dynamic_spheres.begin() ; sphere != _dynamic_spheres.end() ; ++sphere){
+            stateChangeObject stateObject = detectStateChanges(*sphere,dt);
+            //(*sphere)->state= stateObject.stateChanges;
+        }
+
+//        for (auto& sphere : _dynamic_spheres){
+//        if ( dt>0.04 && sphere->state==states::Rolling){
+//            sphere->velocity=GMlib::Vector<double,3>(0.0f,0.0f,0.0f);
+//        }
+//        }
 
 
         //Detect collisions
@@ -354,9 +373,6 @@ namespace collision
                 if (col.flag == CollisionStateFlag::Collision && col.time < seconds_type(dt) && col.time > it1->curr_t_in_dt){
                     _collisions.emplace(col.time,CollisionObject(it1,it2,col.time));
                 }
-//               else if(col.flag ==CollisionStateFlag::SingularityParallelAndTouching){
-//                    setAttachedObjects(it1,it2);
-//                }
             }
         }
     }
@@ -370,101 +386,87 @@ namespace collision
     void collision_controller::attachPlane(DynamicPSphere *sphere, StaticPPlane *plane){
 
         _attachedPlanes[sphere].push_back(plane);
-
     }
 
-    void detachPlane(DynamicPSphere*  sphere  , StaticPPlane* plane){
-
+    void collision_controller::detachPlane(DynamicPSphere*  sphere  , StaticPPlane* plane){
+        std::swap(plane,_attachedPlanes[sphere].back());
+        _attachedPlanes[sphere].pop_back();
 
     }
 
     stateChangeObject collision_controller::detectStateChanges( DynamicPSphere* sphere, double dt){
-        auto planes = this->getAttachedPlanes(sphere);
-
+        auto planes = this->getAttachedPlanes(sphere) ;
         auto r = sphere->getRadius();
         auto p = sphere->getMatrixToScene() * sphere->getPos();
-        auto M =(_static_planes.back()) ->evaluateParent(0.5f,0.5f,1,1);
-        auto q = M(0)(0);
 
-        if (!planes.empty()){
-            auto epsilon = 1e-5;
-            auto dts = seconds_type(dt);
-            auto max_dt = dts;
-            auto min_dt = sphere->curr_t_in_dt;
-            auto new_dt = max_dt -min_dt;
-            auto ds = sphere->computeTrajectory(new_dt);
-            GMlib::Vector <float,3>n {0.0f,0.0f,0.0f};
-            for (auto &it :planes){
-                auto M = it->evaluateParent(0.5f,0.5f,1,1);
-                auto u = M(1)(0);
-                auto v = M(0)(1);
-                auto normal = GMlib::Vector<float,3>(u ^ v);
-                n+=normal;
-           }
-           n= GMlib::Vector <float,3>(n/planes.size()).getNormalized();
+         if (planes.empty()){
+             return (stateChangeObject(sphere, states::Free));
+         }
+         else{
+             auto epsilon = 1e-5;
+             auto dts = seconds_type(dt);
+             auto max_dt = dts;
+             auto min_dt = sphere->curr_t_in_dt;
+             auto new_dt = max_dt -min_dt;
+             auto ds = sphere->computeTrajectory(new_dt);
+             GMlib::APoint<float,3> q;
+             GMlib::Vector <float,3>n {0.0f,0.0f,0.0f};
+             for (auto &it :planes){
+                 auto M = it->evaluateParent(0.5f,0.5f,1,1);
+                 auto pos= M(0)(0);
+                 auto u = M(1)(0);
+                 auto v = M(0)(1);
+                 auto normal = GMlib::Vector<float,3>(u ^ v);
+                 n+=normal;
+                  q=pos;
+            }
+            n= GMlib::Vector <float,3>(n/planes.size()).getNormalized();
 
-           auto d = (q + r * n) - p;
-           auto bla=std::abs(((-n*r) * ds) -(ds*ds));
-           auto dsn= ds * n;
-           auto dn= d*n;
+            auto d = (q + r * n) - p;
+            auto bla=std::abs(((-n*r) * ds) -(ds*ds));
+            auto dsn= ds * n;
+            auto dn= d*n;
 
-                if (sphere->state == states::Rolling){
-                    if (ds * n > 0){
-                        std::cout<<"state changes from Rolling to Free";
-                        return (stateChangeObject(sphere, states::Free));
-                        //detach
-                    }
-                    else if (std::abs(((-n*r) * ds) -(ds*ds)) < epsilon){
-                         std::cout<<"state changes from Rolling to Still";
-                        return (stateChangeObject(sphere,states::Still)) ;
-                    }
-                    else
-                        return (stateChangeObject(sphere,  states::Rolling));
-                }
+            if (std::abs(((-n*r) * ds) -(ds*ds)) < epsilon){
+                sphere->state=states::Still;
+            }
+            else
+                sphere->state = states::Rolling;
 
-                else if (sphere->state == states::Still){
-                    if (std::abs(((-n*r) * ds) -(ds*ds)) < epsilon){
-                        //Correct trajectory
-                        std::cout<<"state changes from still to Rolling";
-                        return (stateChangeObject(sphere,  states::Rolling));
-                    }
-                    else if (ds * n > 0  ){
-                        std::cout<<"state changes from still to Free";
-                        return (stateChangeObject(sphere,  states::Free));
-                        //detach from plane
-                    }
-                    else
-                        return (stateChangeObject(sphere,  states::Still));
-                }
+                 if (sphere->state == states::Rolling){
+                     if (std::abs(ds * n) > 0){
+                         std::cout<<"state changes from Rolling to Free";
+                         //detachement
+                         _attachedPlanes[sphere].clear(); //empty vector
+                         return (stateChangeObject(sphere, states::Free));
+                     }
+                     else if (std::abs(((-n*r) * ds) -(ds*ds)) < epsilon){
+                          std::cout<<"state changes from Rolling to Still";
+                         return (stateChangeObject(sphere,states::Still)) ;
+                     }
+                 }
 
-                else{
-                    if (ds * n <= 0 && std::abs(d * n) < epsilon ){
-                        if (std::abs(((-n*r) * ds) -(ds*ds)) < epsilon){
-                            std::cout<<"state changes Free to Still";
-                            return (stateChangeObject(sphere,  states::Still));
-                        }
-                        //Correct trajectory
-                        else{
-                        std::cout<<"state changes Free to Rolling";
-                        return (stateChangeObject(sphere,  states::Rolling));
-                        }
-                    }
-                    else
-                        return (stateChangeObject(sphere,  states::Free));
-
-                }
-        }
-        else
-            return (stateChangeObject(sphere,  sphere->state));
-
-
+                 else if (sphere->state == states::Still){
+                     if (std::abs(((-n*r) * ds) -(ds*ds)) > epsilon){
+                         //Correct trajectory
+                         std::cout<<"state changes from still to Rolling";
+                         return (stateChangeObject(sphere,  states::Rolling));
+                     }
+                     else if (ds * n > 0  ){
+                         std::cout<<"state changes from still to Free";
+                         //detachement
+                         _attachedPlanes[sphere].clear(); //empty vector
+                         return (stateChangeObject(sphere,  states::Free));
+                     }
+                 }
+         }
     }
 
 
     void collision_controller::add (DynamicPSphere* const sphere) {
         _dynamic_spheres.push_back(sphere);
         _attachedPlanes[sphere];
-        this->attachPlane(sphere,_static_planes.back());
+       // this->attachPlane(sphere,_static_planes.back());
         sphere->environment = &_environment;
     }
 

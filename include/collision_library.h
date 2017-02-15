@@ -42,9 +42,9 @@
        void localSimulate (double dt) override;
        void detectCollisions(double dt);
        void attachPlane(DynamicPSphere*  sphere  , StaticPPlane* plane);
+        void detachPlane(DynamicPSphere*  sphere  , StaticPPlane* plane);
        std::vector<StaticPPlane*>  const getAttachedPlanes(DynamicPSphere* sphere) ;
        stateChangeObject detectStateChanges( DynamicPSphere* sphere,double dt);
-       void detachPlane(DynamicPSphere*  sphere  , StaticPPlane* plane);
 
        std::vector<DynamicPSphere*>                                                                                             _dynamic_spheres;
        std::vector<StaticPSphere*>                                                                                                   _static_spheres;
@@ -54,7 +54,7 @@
 
        std::multimap<seconds_type,collision::CollisionObject>                                                _collisions;
        std::unordered_map<DynamicPSphere* , std::vector<StaticPPlane*>>                    _attachedPlanes;
-       DefaultEnvironment                                                                                                                    _environment;
+       Environment                                                                                                                    _environment;
 
    };
 
@@ -63,7 +63,7 @@
    public:
        using DynamicPhysObject_Base<GMlib::PSphere<float>>::DynamicPhysObject_Base;
 
-       states                                                                     state= states::Free;
+       states                                                                        state;
 
        //collision_controller*                                         sphereController;
 
