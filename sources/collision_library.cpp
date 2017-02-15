@@ -272,9 +272,9 @@ namespace collision
             sphere->curr_t_in_dt =seconds_type(0.0);
         }
 
-         for (auto it = _dynamic_spheres.begin(); it != _dynamic_spheres.end(); it++){
-             auto stateObject = detectStateChanges(*it,dt);
-             (*it)->state= stateObject.stateChanges;
+         for (auto& sphere : _dynamic_spheres){
+             auto stateObject = detectStateChanges(sphere,dt);
+             sphere->state= stateObject.stateChanges;
 
          }
 
@@ -367,21 +367,14 @@ namespace collision
 
     }
 
-    void collision_controller::setAttachedObjects(DynamicPSphere *sphere, StaticPPlane *plane){
+    void collision_controller::attachPlane(DynamicPSphere *sphere, StaticPPlane *plane){
 
-        _attachedPlanes[sphere].emplace_back(plane);
-
-    }
-
-    void setState(DynamicPSphere* sphere, states state){
-
-        sphere->state =state;
+        _attachedPlanes[sphere].push_back(plane);
 
     }
 
-    states getState(DynamicPSphere* sphere){
+    void detachPlane(DynamicPSphere*  sphere  , StaticPPlane* plane){
 
-        return sphere->state;
 
     }
 
@@ -394,7 +387,7 @@ namespace collision
         auto q = M(0)(0);
 
         if (!planes.empty()){
-            auto epsilon = 1e-4;
+            auto epsilon = 1e-5;
             auto dts = seconds_type(dt);
             auto max_dt = dts;
             auto min_dt = sphere->curr_t_in_dt;
@@ -419,6 +412,7 @@ namespace collision
                     if (ds * n > 0){
                         std::cout<<"state changes from Rolling to Free";
                         return (stateChangeObject(sphere, states::Free));
+                        //detach
                     }
                     else if (std::abs(((-n*r) * ds) -(ds*ds)) < epsilon){
                          std::cout<<"state changes from Rolling to Still";
@@ -437,6 +431,7 @@ namespace collision
                     else if (ds * n > 0  ){
                         std::cout<<"state changes from still to Free";
                         return (stateChangeObject(sphere,  states::Free));
+                        //detach from plane
                     }
                     else
                         return (stateChangeObject(sphere,  states::Still));
@@ -444,13 +439,15 @@ namespace collision
 
                 else{
                     if (ds * n <= 0 && std::abs(d * n) < epsilon ){
+                        if (std::abs(((-n*r) * ds) -(ds*ds)) < epsilon){
+                            std::cout<<"state changes Free to Still";
+                            return (stateChangeObject(sphere,  states::Still));
+                        }
                         //Correct trajectory
+                        else{
                         std::cout<<"state changes Free to Rolling";
                         return (stateChangeObject(sphere,  states::Rolling));
-                    }
-                    else if (std::abs(((-n*r) * ds) -(ds*ds)) < epsilon){
-                         std::cout<<"state changes Free to Still";
-                        return (stateChangeObject(sphere,  states::Still));
+                        }
                     }
                     else
                         return (stateChangeObject(sphere,  states::Free));
@@ -466,9 +463,8 @@ namespace collision
 
     void collision_controller::add (DynamicPSphere* const sphere) {
         _dynamic_spheres.push_back(sphere);
-        auto m=0;
-        StaticPPlane* p;
-        setAttachedObjects(sphere,_static_planes.back());
+        _attachedPlanes[sphere];
+        this->attachPlane(sphere,_static_planes.back());
         sphere->environment = &_environment;
     }
 

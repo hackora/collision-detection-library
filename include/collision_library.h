@@ -41,14 +41,10 @@
    protected:
        void localSimulate (double dt) override;
        void detectCollisions(double dt);
-       void setAttachedObjects(DynamicPSphere*  sphere  , StaticPPlane* plane);
+       void attachPlane(DynamicPSphere*  sphere  , StaticPPlane* plane);
        std::vector<StaticPPlane*>  const getAttachedPlanes(DynamicPSphere* sphere) ;
-
-       void setState(DynamicPSphere* sphere, states state);
-
-       states getState(DynamicPSphere* sphere);
-
        stateChangeObject detectStateChanges( DynamicPSphere* sphere,double dt);
+       void detachPlane(DynamicPSphere*  sphere  , StaticPPlane* plane);
 
        std::vector<DynamicPSphere*>                                                                                             _dynamic_spheres;
        std::vector<StaticPSphere*>                                                                                                   _static_spheres;
