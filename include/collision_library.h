@@ -18,11 +18,12 @@
 
    struct stateChangeObject{
         DynamicPSphere* obj;
-       states stateChanges;
-       //maybe time (usually now)
+        seconds_type  t_in_dt;
+        std::vector<StaticPPlane*> plan{};
+        states stateChanges;
 
-       stateChangeObject( DynamicPSphere* o, states s  )
-           : obj{o}, stateChanges{s} {}
+       stateChangeObject( DynamicPSphere* o, seconds_type  t, std::vector<StaticPPlane*> pl, states s )
+           : obj{o},  t_in_dt{t}, plan{pl},  stateChanges{s}{}
    };
 
    class collision_controller : public Controller {
@@ -43,8 +44,9 @@
        void localSimulate (double dt) override;
        void detectCollisions(double dt);
        void attachPlane(DynamicPSphere*  sphere  , StaticPPlane* plane);
-        void detachPlane(DynamicPSphere*  sphere  , StaticPPlane* plane);
-       stateChangeObject detectStateChanges( DynamicPSphere* sphere,double dt);
+       void detachPlane(DynamicPSphere*  sphere  , StaticPPlane* plane);
+       void detectStateChanges(double dt);
+       stateChangeObject detectStateChange(DynamicPSphere*  sphere , double dt);
 
        std::vector<DynamicPSphere*>                                                                                             _dynamic_spheres;
        std::vector<StaticPSphere*>                                                                                                   _static_spheres;
@@ -53,6 +55,7 @@
        std::vector<StaticPBezierSurf*>                                                                                             _static_bezier_surf;
 
        std::multimap<seconds_type,collision::CollisionObject>                                                _collisions;
+       std::multimap<seconds_type,stateChangeObject>                                                          _stateChanges;
        std::unordered_map<DynamicPSphere* , std::vector<StaticPPlane*>>                    _attachedPlanes;
        DefaultEnvironment                                                                                                                    _environment;
 
@@ -63,7 +66,7 @@
    public:
        using DynamicPhysObject_Base<GMlib::PSphere<float>>::DynamicPhysObject_Base;
 
-       states                                                                        state;
+       states                                                                        state=states::Free;
 
        collision_controller*                                         sphereController;
 
