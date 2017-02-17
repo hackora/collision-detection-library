@@ -37,13 +37,13 @@
        void add (StaticPPlane* const plane) { _static_planes.push_back(plane); }
        void add (StaticPCylinder* const cylinder) { _static_cylinders.push_back(cylinder); }
        void add (StaticPBezierSurf* const surf) { _static_bezier_surf.push_back(surf); }
+       std::vector<StaticPPlane*>  const getAttachedPlanes(DynamicPSphere* sphere) ;
 
    protected:
        void localSimulate (double dt) override;
        void detectCollisions(double dt);
        void attachPlane(DynamicPSphere*  sphere  , StaticPPlane* plane);
         void detachPlane(DynamicPSphere*  sphere  , StaticPPlane* plane);
-       std::vector<StaticPPlane*>  const getAttachedPlanes(DynamicPSphere* sphere) ;
        stateChangeObject detectStateChanges( DynamicPSphere* sphere,double dt);
 
        std::vector<DynamicPSphere*>                                                                                             _dynamic_spheres;
@@ -54,7 +54,7 @@
 
        std::multimap<seconds_type,collision::CollisionObject>                                                _collisions;
        std::unordered_map<DynamicPSphere* , std::vector<StaticPPlane*>>                    _attachedPlanes;
-       Environment                                                                                                                    _environment;
+       DefaultEnvironment                                                                                                                    _environment;
 
    };
 
@@ -65,14 +65,15 @@
 
        states                                                                        state;
 
-       //collision_controller*                                         sphereController;
+       collision_controller*                                         sphereController;
 
        void    simulateToTInDt( seconds_type t ) override;
+       GMlib::Vector<double,3>  adjustTrajectory(seconds_type dt);
        GMlib::Vector<double,3> computeTrajectory( seconds_type dt) const override { //m
 
            auto t = dt.count();
            auto F = this->externalForces();
-           auto const tay = 0.5  * F * std::pow(t,2); //taylor
+           auto const tay = 0.5  * F * t * t; //taylor
            return this->velocity * t + tay  ;
        }
 

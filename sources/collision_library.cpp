@@ -278,9 +278,6 @@ namespace collision
                 auto col = collision::detectCollision(*sphere,*plane,seconds_type(dt));
                 if (col.flag == CollisionStateFlag::SingularityParallelAndTouching && !( std::find(_attachedPlanes[sphere].begin(), _attachedPlanes[sphere].end(), plane) != _attachedPlanes[sphere].end() ))
                     attachPlane(sphere,plane);
-
-//                else if(col.flag != CollisionStateFlag::SingularityParallelAndTouching  &&  ( std::find(_attachedPlanes[sphere].begin(), _attachedPlanes[sphere].end(), plane) != _attachedPlanes[sphere].end() ))
-//                    detachPlane(sphere,plane);
             }
         }
 
@@ -290,12 +287,6 @@ namespace collision
             stateChangeObject stateObject = detectStateChanges(*sphere,dt);
             //(*sphere)->state= stateObject.stateChanges;
         }
-
-//        for (auto& sphere : _dynamic_spheres){
-//        if ( dt>0.04 && sphere->state==states::Rolling){
-//            sphere->velocity=GMlib::Vector<double,3>(0.0f,0.0f,0.0f);
-//        }
-//        }
 
 
         //Detect collisions
@@ -338,8 +329,14 @@ namespace collision
         auto t0 = seconds_type(t - this->curr_t_in_dt);
         auto Mi = this->getMatrixToSceneInverse();
         //move
+        GMlib::Vector<double,3>  ds;
 
-        auto ds = this->computeTrajectory(t0);
+        if (this->state != states::Rolling){
+            ds = this->computeTrajectory(t0);
+        }
+        else{
+            ds = this->adjustTrajectory(t0);
+        }
         this->translateParent(Mi*ds);
         this->curr_t_in_dt =t;
         //update physics
@@ -418,7 +415,7 @@ namespace collision
                  auto v = M(0)(1);
                  auto normal = GMlib::Vector<float,3>(u ^ v);
                  n+=normal;
-                  q=pos;
+                 q=pos;
             }
             n= GMlib::Vector <float,3>(n/planes.size()).getNormalized();
 
@@ -434,7 +431,7 @@ namespace collision
                 sphere->state = states::Rolling;
 
                  if (sphere->state == states::Rolling){
-                     if (std::abs(ds * n) > 0){
+                     if (ds * n > 0){
                          std::cout<<"state changes from Rolling to Free";
                          //detachement
                          _attachedPlanes[sphere].clear(); //empty vector
@@ -466,11 +463,33 @@ namespace collision
     void collision_controller::add (DynamicPSphere* const sphere) {
         _dynamic_spheres.push_back(sphere);
         _attachedPlanes[sphere];
-       // this->attachPlane(sphere,_static_planes.back());
         sphere->environment = &_environment;
     }
 
-   // void correctTrajectory(const DynamicPhysObject<GMlib::PSphere<float>>& S, seconds_type dt);
+    GMlib::Vector<double,3>  DynamicPhysObject<GMlib::PSphere<float> >::adjustTrajectory(seconds_type dt){
+
+        auto r = this->getRadius();
+        auto s = this->getMatrixToScene() * this->getPos();
+        auto ds = this->computeTrajectory(dt);
+        auto p = s+ds;
+        auto planes = sphereController->getAttachedPlanes(this) ;
+        GMlib::Vector <float,3>n {0.0f,0.0f,0.0f};
+
+        for (auto &it :planes){
+            auto M = it->evaluateParent(0.5f,0.5f,1,1);
+            auto q = M(0)(0);
+            auto u = M(1)(0);
+            auto v = M(0)(1);
+            auto normal = GMlib::Vector<float,3>(u ^ v);
+            n+=normal;
+       }
+        n= GMlib::Vector <float,3>(n/planes.size()).getNormalized();
+
+       auto dsAdjusted = ds - ds*n*n;
+
+       return dsAdjusted;
+
+    }
 
 
 } // END namespace collision
