@@ -18,12 +18,24 @@
 
    struct stateChangeObject{
         DynamicPSphere* obj;
+        std::vector<StaticPPlane*> attachedPlanes;
+        states stateChanges;
         seconds_type  t_in_dt;
-        std::vector<StaticPPlane*> plan{};
+
+       stateChangeObject( DynamicPSphere* o, std::vector<StaticPPlane*> p,  states s,  seconds_type  t )
+           : obj{o},  attachedPlanes{p}, stateChanges{s},  t_in_dt{t}{}
+   };
+
+   //what I return from detectStateChange (just what is necessary and what I don't know) :
+   //The state that my object will transition to
+   //The planes it is gonna be attached to
+
+   struct stateChangeObjectMin{
+        std::vector<StaticPPlane*> attachedPlanes;
         states stateChanges;
 
-       stateChangeObject( DynamicPSphere* o, seconds_type  t, std::vector<StaticPPlane*> pl, states s )
-           : obj{o},  t_in_dt{t}, plan{pl},  stateChanges{s}{}
+       stateChangeObjectMin( std::vector<StaticPPlane*> p,  states s )
+           : attachedPlanes{p}, stateChanges{s}{}
    };
 
    class collision_controller : public Controller {
