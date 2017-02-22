@@ -255,7 +255,6 @@ namespace collision
 
 
     std::unique_ptr<Controller> unittestCollisionControllerFactory(){ return std::make_unique<collision_controller> (); }
-    //void DynamicPhysObject<GMlib::PSphere<float> >::simulateToTInDt(seconds_type t){ }
 
     GMlib::Vector<double,3> DynamicPhysObject<GMlib::PSphere<float> >::externalForces() const {
         assert (environment != nullptr);
@@ -274,15 +273,16 @@ namespace collision
 
         //Detect state changes
 
-        //detectStateChanges(dt);
+        detectStateChanges(dt);
 
         //Detect collisions
         detectCollisions(dt);
-        sortAndMakeUnique(_collisions);
+
 
         while (!_collisions.empty() || !_stateChanges.empty()){
 
             if (!_collisions.empty() && !_stateChanges.empty() ){
+                sortAndMakeUnique(_collisions, _stateChanges);
                 auto col = _collisions.begin();
                 auto col_time =  col->first;
                 auto singularity = _stateChanges.begin();
@@ -309,26 +309,26 @@ namespace collision
 
                            //Detect more collisions
                            detectCollisions(dt);
-                           sortAndMakeUnique(_collisions);
-
                            //Detect more state changes
                            detectStateChanges(dt);
+                           sortAndMakeUnique(_collisions);
                 }
 
                        //Resolve state changes
                 else {
                     singularity->second.obj->state = singularity->second.stateChanges;
-                    if (singularity->second.stateChanges != states::Still)
+//                    if (singularity->second.stateChanges != states::Still)
                         singularity->second.obj->simulateToTInDt(sing_time);
+//                    else
+//                        singularity->second.obj->curr_t_in_dt = sing_time;
                     _attachedPlanes[ singularity->second.obj] = singularity->second.attachedPlanes;
                     _stateChanges.erase(singularity);
                     _collisions.clear();
                     //Detect more collisions
                     detectCollisions(dt);
-                    sortAndMakeUnique(_collisions);
-
                     //Detect more state changes
                     detectStateChanges(dt);
+                    sortAndMakeUnique(_collisions);
                 }
             }
             else if (!_collisions.empty()){
@@ -353,58 +353,75 @@ namespace collision
 
                    //Detect more collisions
                    detectCollisions(dt);
-                   sortAndMakeUnique(_collisions);
-
                    //Detect more state changes
                    detectStateChanges(dt);
+                   sortAndMakeUnique(_collisions);
             }
             else {
                 auto singularity = _stateChanges.begin();
                 auto sing_time =  singularity->first;
                 singularity->second.obj->state = singularity->second.stateChanges;
-                if (singularity->second.stateChanges != states::Still)
+//                if (singularity->second.stateChanges != states::Still)
                     singularity->second.obj->simulateToTInDt(sing_time);
+//                else
+//                    singularity->second.obj->curr_t_in_dt = sing_time;
                 _attachedPlanes[ singularity->second.obj] = singularity->second.attachedPlanes;
                 _stateChanges.erase(singularity);
                 _collisions.clear();
                 //Detect more collisions
                 detectCollisions(dt);
-                sortAndMakeUnique(_collisions);
-
                 //Detect more state changes
                 detectStateChanges(dt);
+                sortAndMakeUnique(_collisions);
             }
 
 
         }
 
         for(auto& sphere : _dynamic_spheres){
-            sphere->simulateToTInDt(seconds_type(dt));
+            //if (sphere->state != states::Still)
+                sphere->simulateToTInDt(seconds_type(dt));
+            //else
+               // sphere->curr_t_in_dt = seconds_type(dt);
+
         }
 
     }
     void DynamicPhysObject<GMlib::PSphere<float> >::simulateToTInDt( seconds_type t ) {
 
-        auto t0 = seconds_type(t - this->curr_t_in_dt);
-        auto Mi = this->getMatrixToSceneInverse();
-        //move
-        GMlib::Vector<double,3>  ds;
-
-        if (this->state != states::Rolling){
-            ds = this->computeTrajectory(t0);
+        if (this->state == states::Still ){
+            this->environment = &this->sphereController->_noGravity;
         }
-        else{
-            ds = this->adjustTrajectory(t0);
+        else {
+            auto t0 = seconds_type(t - this->curr_t_in_dt);
+            auto Mi = this->getMatrixToSceneInverse();
+            //move
+            auto planes = this->sphereController->getAttachedPlanes(this);
+            GMlib::Vector <float,3>n {0.0f,0.0f,0.0f};
+            for (auto &it :planes){
+                auto M = it->evaluateParent(0.5f,0.5f,1,1);
+                auto u = M(1)(0);
+                auto v = M(0)(1);
+                auto normal = GMlib::Vector<float,3>(u ^ v);
+                n+=normal;
+           }
+           n= GMlib::Vector <float,3>(n/planes.size()).getNormalized();
+
+           GMlib::Vector<double,3>  ds = (0.0f,0.0f,0.0f);
+           if ((this->state == states::Rolling )&& ds *n <0)
+               ds = adjustTrajectory(t0);
+           else
+               ds= this->computeTrajectory(t0);
+
+            this->translateParent(Mi*ds);
+            this->curr_t_in_dt =t;
+            //update physics
+
+            auto F = this->externalForces();
+            auto c = t0.count();
+            auto a = F*c;
+            this->velocity += a;
         }
-        this->translateParent(Mi*ds);
-        this->curr_t_in_dt =t;
-        //update physics
-
-        auto F = this->externalForces();
-        auto c = t0.count();
-        auto a = F*c;
-        this->velocity += a;
-
 
     }
 
@@ -467,17 +484,16 @@ namespace collision
         states state;
         auto r = sphere->getRadius();
         auto pos = sphere->getMatrixToScene() * sphere->getPos();
-        auto min_ctidt = sphere->curr_t_in_dt;
 
         auto epsilon = 1e-5;
         auto dts = seconds_type(dt);
-        auto max_dt = dts;
         auto min_dt = sphere->curr_t_in_dt;
-        auto new_dt = max_dt -min_dt;
+        auto new_dt = dts - min_dt;
         auto ds = sphere->computeTrajectory(new_dt);
         auto planes = this->getAttachedPlanes(sphere) ;
         GMlib::APoint<float,3> q;
         GMlib::Vector <float,3>n {0.0f,0.0f,0.0f};
+        double x ;
 
 
          if (planes.empty()){ //not attached
@@ -491,6 +507,7 @@ namespace collision
                  auto bla=std::abs(((-n*r) * ds) -(ds*ds));
                  auto dsn= ds * n;
                  auto dn= d*n;
+                 auto x = (d * n) / (ds * n);
 
                 if (std::abs(((-n*r) * ds) -(ds*ds)) < epsilon){
                      p.push_back(plane);
@@ -503,7 +520,7 @@ namespace collision
                 else
                     state=states::NoChange;
         }
-        return stateChangeObject(sphere, p,state,min_dt);
+        return stateChangeObject(sphere, p,state,x*new_dt +min_dt);
      }
 
          else{ //attached
@@ -522,6 +539,7 @@ namespace collision
             auto bla=std::abs(((-n*r) * ds) -(ds*ds));
             auto dsn= ds * n;
             auto dn= d*n;
+            auto x = (d * n) / (ds * n);
 
             if (sphere->state == states::Rolling){
                 if (ds * n > 0){
@@ -530,13 +548,13 @@ namespace collision
                     //detachement
                    // _attachedPlanes[sphere].clear(); //empty vector
                     //return (stateChangeObject(sphere, states::Free));
-                    return stateChangeObject(sphere, p,state,min_dt);
+                    return stateChangeObject(sphere, p,state,x*new_dt +min_dt);
                 }
                 else if (std::abs(((-n*r) * ds) -(ds*ds)) < epsilon){
                      std::cout<<"state changes from Rolling to Still";
                      state=states::Still;
                     //return (stateChangeObject(sphere,states::Still)) ;
-                     return stateChangeObject(sphere, planes,state,min_dt);
+                     return stateChangeObject(sphere, planes,state,x*new_dt +min_dt);
                 }
                 else
                     return stateChangeObject(sphere, planes,states::NoChange,min_dt);
@@ -548,7 +566,7 @@ namespace collision
                     state=states::Rolling;
                     std::cout<<"state changes from still to Rolling";
                     //return (stateChangeObject(sphere,  states::Rolling));
-                    return stateChangeObject(sphere, planes,state,min_dt);
+                    return stateChangeObject(sphere, planes,state,x*new_dt +min_dt);
                 }
                 else if (ds * n > 0  ){
                     std::cout<<"state changes from still to Free";
@@ -556,7 +574,7 @@ namespace collision
                     //_attachedPlanes[sphere].clear(); //empty vector
                    // return (stateChangeObject(sphere,  states::Free));
                     state=states::Free;
-                    return stateChangeObject(sphere, p,state,min_dt);
+                    return stateChangeObject(sphere, p,state,x*new_dt +min_dt);
                 }
                 else
                     return stateChangeObject(sphere, planes,states::NoChange,min_dt);
@@ -589,8 +607,7 @@ namespace collision
             n+=normal;
        }
         n= GMlib::Vector <float,3>(n/planes.size()).getNormalized();
-
-       auto dsAdjusted = ds -  s*n*n;
+        auto dsAdjusted = ds + (r+ (s*p))*n;
 
 
        return dsAdjusted;

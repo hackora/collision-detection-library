@@ -51,6 +51,7 @@
        void add (StaticPCylinder* const cylinder) { _static_cylinders.push_back(cylinder); }
        void add (StaticPBezierSurf* const surf) { _static_bezier_surf.push_back(surf); }
        std::vector<StaticPPlane*>  const getAttachedPlanes(DynamicPSphere* sphere) ;
+        Environment                                                                                                                                   _noGravity;
 
    protected:
        void localSimulate (double dt) override;
@@ -137,6 +138,26 @@
 
    }
 
+   template <class Container_T1, class Container_T2 > void sortAndMakeUnique( Container_T1& container1, Container_T2& container2){
+
+       auto it1 = container1.begin() ;
+
+       while (it1!= container1.end()) {
+           auto it2 = container2.begin() ;
+           while (it2!= container2.end()){
+               if ((it1->second.obj1 == it2->second.obj) ||( it1->second.obj2 == it2->second.obj && dynamic_cast<DynamicPSphere*> (it1->second.obj2))){
+                   if (it1->first <= it2->first){
+                       container2.erase(it2++);
+                       ++it1;
+                   }
+                   else{
+                       container1.erase(it1++);
+                       it2 = container2.begin() ;
+                   }
+           }
+       }
+   }
+   }
    }
 
    // END namespace collision
