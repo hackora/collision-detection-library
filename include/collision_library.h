@@ -10,7 +10,6 @@
    namespace collision
    {
    enum class states {
-       NoChange,
        Free,
        Rolling,
        Still
@@ -83,6 +82,7 @@
 
        collision_controller*                                         sphereController;
 
+
        void    simulateToTInDt( seconds_type t ) override;
        GMlib::Vector<double,3>  adjustTrajectory(seconds_type dt);
        GMlib::Vector<double,3> computeTrajectory( seconds_type dt) const override { //m
@@ -138,6 +138,25 @@
 
    }
 
+   template <class Container_T > void sortAndMakeUniqueState( Container_T& container) {
+
+       for (auto it1 = container.begin() ; it1 != container.end() ; ++it1){
+           for (auto it2 = std::next(it1,1) ; it2 != container.end() ;){
+               if (it2->second.obj == it1->second.obj)
+                     {
+                       container.erase(it2++);
+                     }
+               else
+                     {
+                       ++it2;
+                     }
+           }
+       }
+
+
+
+   }
+
    template <class Container_T1, class Container_T2 > void sortAndMakeUnique( Container_T1& container1, Container_T2& container2){
 
        auto it1 = container1.begin() ;
@@ -152,7 +171,10 @@
                    }
                    else{
                        container1.erase(it1++);
-                       it2 = container2.begin() ;
+                       if (! container1.empty())
+                           it2 = container2.begin() ;
+                       else
+                           break;
                    }
            }
        }
