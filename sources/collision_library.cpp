@@ -305,7 +305,8 @@ namespace collision
                         if (auto sphere2 = dynamic_cast<DynamicPSphere*> (col_obj2)){
                             auto sphere1 = dynamic_cast<DynamicPSphere*> (col_obj1);
                             sphere1->simulateToTInDt(col_time);
-                            sphere2->simulateToTInDt(col_time);
+                            if(sphere2->state != states::Still)
+                                sphere2->simulateToTInDt(col_time);
                             computeImpactResponse(*sphere1,*sphere2,col_time);
                         }
                         else {
@@ -357,7 +358,8 @@ namespace collision
                 if (auto sphere2 = dynamic_cast<DynamicPSphere*> (col_obj2)){
                     auto sphere1 = dynamic_cast<DynamicPSphere*> (col_obj1);
                     sphere1->simulateToTInDt(col_time);
-                    sphere2->simulateToTInDt(col_time);
+                    if(sphere2->state != states::Still)
+                        sphere2->simulateToTInDt(col_time);
                     computeImpactResponse(*sphere1,*sphere2,col_time);
                 }
                 else {
@@ -402,22 +404,17 @@ namespace collision
         }
 
         for(auto& sphere : _dynamic_spheres){
-            //if (sphere->state != states::Still)
+            if (sphere->state != states::Still)
                 sphere->simulateToTInDt(seconds_type(dt));
-            //else
-               // sphere->curr_t_in_dt = seconds_type(dt);
 
         }
 
     }
     void DynamicPhysObject<GMlib::PSphere<float> >::simulateToTInDt( seconds_type t ) {
 
-        if  (this->state == states::Still){
-            this->curr_t_in_dt =t;
-            if (std::abs(this->velocity(2))  <= 1e-6){
+        if  ((this->state == states::Still || this->state == states::Rolling)  && std::abs(this->velocity(2))  <= 1e-2 ){
             this->velocity = {0.0f,0.0f,0.0f};
             this->environment = &this->sphereController->_noGravity;
-            }
         }
        else {
             auto t0 = seconds_type(t - this->curr_t_in_dt);
@@ -435,7 +432,7 @@ namespace collision
            n= GMlib::Vector <float,3>(n/planes.size()).getNormalized();
 
            GMlib::Vector<double,3>  ds = (0.0f,0.0f,0.0f);
-           if ((this->state == states::Rolling )&& ds *n <0)
+           if ((this->state == states::Rolling )/*&& ds *n <0*/)
                ds = adjustTrajectory(t0);
            else
                ds= this->computeTrajectory(t0);
@@ -453,6 +450,17 @@ namespace collision
     }
 
     void collision_controller::detectCollisions(double dt){
+
+        bool movingObject =false;
+
+        for(auto& sphere : _dynamic_spheres){
+            if (sphere->state != states::Still){
+                movingObject = true;
+                break;
+            }
+        }
+
+        if (movingObject){
 
         //loop for collision between dynamic objects (only spheres for now)
         for (auto it1 = _dynamic_spheres.begin() ; it1 != _dynamic_spheres.end() ; ++it1){
@@ -476,6 +484,7 @@ namespace collision
                 }
             }
         }
+  }
     }
 
 
@@ -536,7 +545,7 @@ namespace collision
                  auto dn= d*n;
                  auto x = (d * n) / (ds * n);
 
-                if (std::abs(((-n*r) * ds) -(ds*ds)) < epsilon){
+                if (/* std::abs(d*n) <  epsilon &&*/ std::abs(((-n*r) * ds) -(ds*ds)) < epsilon){
                      p.push_back(plane);
                      state=states::Still;
                      //std::cout<<"state changes from Free to Still";
@@ -636,7 +645,7 @@ namespace collision
             n+=normal;
        }
         n= GMlib::Vector <float,3>(n/planes.size()).getNormalized();
-        auto dsAdjusted = ds + (r+ (s*p))*n;
+        auto dsAdjusted = ds - ds*n*n /* +0.001*n */;
 
        return dsAdjusted;
 
