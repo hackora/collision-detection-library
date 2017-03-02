@@ -319,7 +319,7 @@ namespace collision
                             else{
                                 sphere2->curr_t_in_dt = col_time;
 //                                sphere2->velocity = {0.0f,0.0f,0.0f};
-//                                sphere2->environment = &_noGravity;
+                                sphere2->environment = &_environment;
                             }
                             computeImpactResponse(*sphere1,*sphere2,col_time);
                         }
@@ -386,7 +386,7 @@ namespace collision
                     else{
                         sphere2->curr_t_in_dt = col_time;
 //                        sphere2->velocity = {0.0f,0.0f,0.0f};
-//                        sphere2->environment = &_noGravity;
+                        sphere2->environment = &_environment;
                     }
                     computeImpactResponse(*sphere1,*sphere2,col_time);
                 }
@@ -509,17 +509,18 @@ namespace collision
 
         //loop for collision between dynamic objects (only spheres for now)
         for (auto it1 = _dynamic_spheres.begin() ; it1 != _dynamic_spheres.end() ; ++it1){
-            if((*it1)->state != states::Still){
                 for (auto it2 = it1+1 ; it2 != _dynamic_spheres.end() ; ++it2 ){
                     auto col = collision::detectCollision(**it1,**it2,seconds_type(dt));
                     const auto &sphere1= *it1;
                     const auto &sphere2= *it2;
                     auto min_ctidt = std::max(sphere1->curr_t_in_dt, sphere2->curr_t_in_dt);
-                    if (col.flag == CollisionStateFlag::Collision && col.time < seconds_type(dt) && col.time >=min_ctidt ){
-                        _collisions.emplace(col.time,CollisionObject(sphere1,sphere2,col.time));
+                    if (col.flag == CollisionStateFlag::Collision && col.time <= seconds_type(dt) && col.time >= min_ctidt ){
+                        if (sphere2->state == states::Still)
+                            _collisions.emplace(col.time,CollisionObject(sphere1,sphere2,col.time));
+                        else
+                            _collisions.emplace(col.time,CollisionObject(sphere2,sphere1,col.time));
                     }
                 }
-            }
         }
 
         //loop for collision with static objects (only dynamic spheres with static planes for now)
@@ -527,7 +528,7 @@ namespace collision
             if( it1->state != states::Still){
                 for (auto &it2 : _static_planes){
                     auto col = collision::detectCollision(*it1,*it2,seconds_type(dt));
-                    if (col.flag == CollisionStateFlag::Collision && col.time < seconds_type(dt) && col.time >= it1->curr_t_in_dt){
+                    if (col.flag == CollisionStateFlag::Collision && col.time <= seconds_type(dt) && col.time >= it1->curr_t_in_dt){
                         _collisions.emplace(col.time,CollisionObject(it1,it2,col.time));
                     }
                 }
@@ -578,7 +579,7 @@ namespace collision
 
                  for (auto &it2 : _static_planes){
                      auto col = collision::detectCollision(*sphere,*it2,seconds_type(dt));
-                     if (col.flag == CollisionStateFlag::SingularityParallelAndTouching  && col.time < seconds_type(dt) &&  col.time >= sphere->curr_t_in_dt){
+                     if (col.flag == CollisionStateFlag::SingularityParallelAndTouching  && col.time <= seconds_type(dt) &&  col.time >= sphere->curr_t_in_dt){
                          possibleAttachedPlanes.emplace(col.time,CollisionObject(sphere,it2,col.time));
 
                      }
@@ -638,15 +639,16 @@ namespace collision
                 }
 
                 else if (sphere->state == states::Still){
-                    if (std::abs(((-n*r) * ds) -(ds*ds)) > epsilon){
-                        //Correct trajectory
-                        state=states::Rolling;
-                        //std::cout<<"state changes from still to Rolling";
-                        //return (stateChangeObject(sphere,  states::Rolling));
-                        //return stateChangeObject(sphere, planes,state,x*new_dt +min_dt);
-                        _stateChanges.emplace(x*new_dt +min_dt,stateChangeObject(sphere, planes, state,x*new_dt +min_dt));
-                    }
-                    else if (ds * n > 0  ){
+//                    if (std::abs(((-n*r) * ds) -(ds*ds)) > epsilon){
+//                        //Correct trajectory
+//                        state=states::Rolling;
+//                        //std::cout<<"state changes from still to Rolling";
+//                        //return (stateChangeObject(sphere,  states::Rolling));
+//                        //return stateChangeObject(sphere, planes,state,x*new_dt +min_dt);
+//                        _stateChanges.emplace(x*new_dt +min_dt,stateChangeObject(sphere, planes, state,x*new_dt +min_dt));
+//                    }
+//                    else
+                    if (ds * n > 0  ){
                         //std::cout<<"state changes from still to Free";
                         //detachement
                         //_attachedPlanes[sphere].clear(); //empty vector

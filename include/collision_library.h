@@ -87,10 +87,14 @@
        GMlib::Vector<double,3>  adjustTrajectory(seconds_type dt);
        GMlib::Vector<double,3> computeTrajectory( seconds_type dt) const override { //m
 
-           auto t = dt.count();
-           auto F = this->externalForces();
-           auto const tay = 0.5  * F * t * t; //taylor
-           return this->velocity * t + tay  ;
+//           if ( this->state == states::Still)
+//               return (0.000001f,0.000001f,0.000001f);
+//           else {
+               auto t = dt.count();
+               auto F = this->externalForces();
+               auto const tay = 0.5  * F * t * t; //taylor
+               return this->velocity * t + tay  ;
+//           }
        }
 
 
