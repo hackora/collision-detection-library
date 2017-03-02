@@ -50,6 +50,7 @@
        void add (StaticPCylinder* const cylinder) { _static_cylinders.push_back(cylinder); }
        void add (StaticPBezierSurf* const surf) { _static_bezier_surf.push_back(surf); }
        std::vector<StaticPPlane*>  const getAttachedPlanes(DynamicPSphere* sphere) ;
+       GMlib::Vector<float,3>  closestPoint(DynamicPSphere*  sphere , seconds_type dt);
         Environment                                                                                                                                   _noGravity;
 
    protected:
