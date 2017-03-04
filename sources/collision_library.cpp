@@ -469,7 +469,7 @@ namespace collision
         if (this->state == states::Rolling)
             std::cout<<"velocity " << this->velocity<<std::endl;
 
-        if  ((this->state == states::Still /*|| this->state == states::Rolling*/)  && std::abs(this->velocity(2))  <= 1e-2){
+        if  ((this->state == states::Still /*|| this->state == states::Rolling*/)  && this->velocity(2) <= 0.01){
             this->curr_t_in_dt =t;
             this->velocity = {0.0f,0.0f,0.0f};
             this->state  == states::Still;
@@ -502,8 +502,16 @@ namespace collision
             auto F = this->externalForces();
             auto c = t0.count();
             auto a = F*c;
-             if ((this->state == states::Rolling )&& ds *n <=0)
-                  this->velocity -= a;
+             if ((this->state == states::Rolling )&& ds *n <=0){
+                 auto newVel = this->velocity - a;
+                 if(std::abs(newVel(2)-this->velocity(2)) > 1e-6 || std::abs(newVel(1)-this->velocity(1)) > 1e-6 || std::abs(newVel(0)-this->velocity(0)) > 1e-6){
+                     this->velocity = {0.0f,0.0f,0.0f};
+                     this->state  == states::Still;
+                     this->environment = &this->sphereController->_noGravity;
+                 }
+                 else
+                     this->velocity  = newVel;
+             }
              else
                  this->velocity += a;
         }
