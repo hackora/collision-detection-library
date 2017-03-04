@@ -58,7 +58,9 @@
        void detectCollisions(double dt);
        void attachPlane(DynamicPSphere*  sphere  , StaticPPlane* plane);
        void detachPlane(DynamicPSphere*  sphere  , StaticPPlane* plane);
-       void detectStateChange(double dt);
+       void detectStateChanges(double dt);
+       stateChangeObject detectStateChange( DynamicPSphere* sphere, double dt);
+
 
        std::vector<DynamicPSphere*>                                                                                             _dynamic_spheres;
        std::vector<StaticPSphere*>                                                                                                   _static_spheres;
