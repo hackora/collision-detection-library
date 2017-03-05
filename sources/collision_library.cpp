@@ -87,7 +87,7 @@ detectCollision ( DynamicPhysObject<GMlib::PSphere<float>>& S,
 
     if ((std::abs(d * n))< epsilon)
     {
-        return(CollisionState(seconds_type(epsilon),CollisionStateFlag::SingularityParallelAndTouching));
+        return(CollisionState(seconds_type(0.0),CollisionStateFlag::SingularityParallelAndTouching));
     }
 
     else if ((std::abs(ds * n))< epsilon)
@@ -290,7 +290,7 @@ void collision_controller::localSimulate(double dt) {
             auto singularity = _stateChanges.begin();
             auto sing_time =  singularity->first;
 
-            if( col_time<sing_time){
+            if( col_time<=sing_time){
                 //Resolve collision
                 auto col_obj1 = col->second.obj1;
                 auto col_obj2 = col->second.obj2;
@@ -486,8 +486,7 @@ void DynamicPhysObject<GMlib::PSphere<float> >::simulateToTInDt( seconds_type t 
     auto a = F*c;
 
     if ((this->state == states::Rolling )&& ds *n <=0){
-
-        if (std::abs(this->velocity * dir) >=1e-4){
+        if (std::abs(this->velocity * dir) >=1e-2){
             this->velocity = {0.0f,0.0f,0.0f};
             std::cout<< " mass : "<< this->mass <<" State changes from " <<  1 <<"  to " << 2  <<std::endl;
             this->state  = states::Still;
@@ -603,7 +602,7 @@ void collision_controller::detectStateChanges(double dt){
                 _stateChanges.emplace(singularity.t_in_dt,stateChangeObject(*it1, singularity.attachedPlanes, singularity.stateChanges,singularity.t_in_dt));
             }
         }
-        QCoreApplication::processEvents();
+//        QCoreApplication::processEvents();
     }
 }
 
