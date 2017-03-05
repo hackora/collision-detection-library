@@ -7,6 +7,8 @@ project(my_collision_library VERSION 0.1 LANGUAGES CXX)
 # Specify compiler features
 set(CMAKE_CXX_STANDARD 14)
 
+find_package(Qt5Core 5.1)
+
 # Find GMlib
 find_package(
   GMlib 0.6.9 EXACT
@@ -37,6 +39,7 @@ set(SRCS sources/collision_library.cpp)
 add_library( ${CMAKE_PROJECT_NAME} SHARED ${HDRS} ${SRCS} )
 target_link_libraries(
   ${CMAKE_PROJECT_NAME}
+  Qt5::Core
   ${GMlib_LIBRARIES}
   ${GLEW_LIBRARIES}
   ${OPENGL_LIBRARIES}
