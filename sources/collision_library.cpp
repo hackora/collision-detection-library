@@ -304,8 +304,7 @@ void collision_controller::localSimulate(double dt) {
                     else{
                         sphere2->curr_t_in_dt = col_time;
                         sphere2->environment = &_environment;
-                        //                                sphere2->state = states::Rolling;
-                        std::cout<< "someone hit me now I'm not still anymore"<<std::endl;
+//                     std::cout<< "someone hit me now I'm not still anymore"<<std::endl;
 
                     }
                     computeImpactResponse(*sphere1,*sphere2,col_time);
@@ -346,7 +345,7 @@ void collision_controller::localSimulate(double dt) {
                     singularity->second.obj->velocity = {0.0f,0.0f,0.0f};
                     singularity->second.obj->environment = &_noGravity;
                 }
-                std::cout<< " mass : "<< singularity->second.obj->mass << "  State changes from " <<  int (singularity->second.obj->state)<<" to " << int(singularity->second.stateChanges)  <<std::endl;
+//                std::cout<< " mass : "<< singularity->second.obj->mass << "  State changes from " <<  int (singularity->second.obj->state)<<" to " << int(singularity->second.stateChanges)  <<std::endl;
                 singularity->second.obj->state = singularity->second.stateChanges;
                 _stateChanges.erase(singularity);
                 //Detect more collisions
@@ -377,8 +376,7 @@ void collision_controller::localSimulate(double dt) {
                 else{
                     sphere2->curr_t_in_dt = col_time;
                     sphere2->environment = &_environment;
-                    //                        sphere2->state = states::Rolling;
-                    std::cout<< "someone hit me now I'm not still anymore"<<std::endl;
+//                 std::cout<< "someone hit me now I'm not still anymore"<<std::endl;
                 }
                 computeImpactResponse(*sphere1,*sphere2,col_time);
             }
@@ -418,7 +416,7 @@ void collision_controller::localSimulate(double dt) {
                 singularity->second.obj->velocity = {0.0f,0.0f,0.0f};
                 singularity->second.obj->environment = &_noGravity;
             }
-            std::cout << " mass : "<< singularity->second.obj->mass << "  State changes from " <<  int (singularity->second.obj->state)<<" to " << int(singularity->second.stateChanges)  <<std::endl;
+//            std::cout << " mass : "<< singularity->second.obj->mass << "  State changes from " <<  int (singularity->second.obj->state)<<" to " << int(singularity->second.stateChanges)  <<std::endl;
             singularity->second.obj->state = singularity->second.stateChanges;
 
             _stateChanges.erase(singularity);
@@ -488,7 +486,7 @@ void DynamicPhysObject<GMlib::PSphere<float> >::simulateToTInDt( seconds_type t 
     if ((this->state == states::Rolling )&& ds *n <=0){
         if (std::abs(this->velocity * dir) >=1e-2){
             this->velocity = {0.0f,0.0f,0.0f};
-            std::cout<< " mass : "<< this->mass <<" State changes from " <<  1 <<"  to " << 2  <<std::endl;
+//            std::cout<< " mass : "<< this->mass <<" State changes from " <<  1 <<"  to " << 2  <<std::endl;
             this->state  = states::Still;
             this->environment = &this->sphereController->_noGravity;
         }
@@ -602,7 +600,7 @@ void collision_controller::detectStateChanges(double dt){
                 _stateChanges.emplace(singularity.t_in_dt,stateChangeObject(*it1, singularity.attachedPlanes, singularity.stateChanges,singularity.t_in_dt));
             }
         }
-//        QCoreApplication::processEvents();
+        //        QCoreApplication::processEvents();
     }
 }
 
